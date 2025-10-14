@@ -23,6 +23,7 @@
           </ul>
         </li>
         <li><router-link to="/duan">Dự án</router-link></li>
+        <li><router-link to="/donhang">Đơn hàng</router-link></li>
         <li><router-link to="/lienhe">Liên hệ</router-link></li>
       </ul>
       <div class="nav-right">

@@ -75,7 +75,12 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
 import { useCart } from '../composables/useCart'
+import { useOrders } from '../composables/useOrders'
+import { useAuth } from '../composables/useAuth'
+
+const router = useRouter()
 
 // Lấy các hàm và dữ liệu từ composable
 const { 
@@ -88,16 +93,20 @@ const {
   clearCart
 } = useCart()
 
+const { createOrder } = useOrders()
+const { userName } = useAuth()
+
 // Xử lý thanh toán
 const handlePayment = () => {
-  const summary = cart.value
-    .map(i => `• ${i.name}: ${i.quantity} × ${i.days} ngày`)
-    .join('\n')
+  // Tạo đơn hàng mới
+  const order = createOrder([...cart.value], cartTotal.value, userName.value)
   
-  alert(
-    `✅ Thanh toán thành công!\n\n${summary}\n\nTổng tiền: ${cartTotal.value.toLocaleString()}đ\n\nCảm ơn bạn đã thuê thiết bị âm thanh.`
-  )
-  
+  // Xóa giỏ hàng
   clearCart()
+  
+  // Thông báo và chuyển đến trang đơn hàng
+  alert(`✅ Thanh toán thành công!\n\nMã đơn hàng: ${order.orderNumber}\n\nVui lòng chờ xác nhận từ chúng tôi.`)
+  
+  router.push('/donhang')
 }
 </script>

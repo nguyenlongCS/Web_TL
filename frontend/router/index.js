@@ -10,6 +10,7 @@ import ProjectsView from '../views/ProjectsView.vue'
 import ContactView from '../views/ContactView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
+import OrdersView from '../views/OrdersView.vue'
 
 const routes = [
   {
@@ -36,6 +37,11 @@ const routes = [
     path: '/lienhe',
     name: 'contact',
     component: ContactView
+  },
+  {
+    path: '/donhang',
+    name: 'orders',
+    component: OrdersView
   },
   {
     path: '/giohang',
