@@ -8,6 +8,8 @@ import CartView from '../views/CartView.vue'
 import AboutView from '../views/AboutView.vue'
 import ProjectsView from '../views/ProjectsView.vue'
 import ContactView from '../views/ContactView.vue'
+import LoginView from '../views/LoginView.vue'
+import RegisterView from '../views/RegisterView.vue'
 
 const routes = [
   {
@@ -39,6 +41,16 @@ const routes = [
     path: '/giohang',
     name: 'cart',
     component: CartView
+  },
+  {
+    path: '/dangnhap',
+    name: 'login',
+    component: LoginView
+  },
+  {
+    path: '/dangky',
+    name: 'register',
+    component: RegisterView
   }
 ]
 
