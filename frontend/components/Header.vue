@@ -6,7 +6,7 @@
     <div class="container">
       <ul class="nav-menu">
         <li><router-link to="/">Trang chủ</router-link></li>
-        <li><a href="#">Giới thiệu</a></li>
+        <li><router-link to="/gioithieu">Giới thiệu</router-link></li>
         <li>
           <router-link to="/sanpham">Sản phẩm</router-link>
           <ul class="dropdown">
@@ -16,8 +16,8 @@
             <li><a href="#">Khác</a></li>
           </ul>
         </li>
-        <li><a href="#">Dự án</a></li>
-        <li><a href="#">Liên hệ</a></li>
+        <li><router-link to="/duan">Dự án</router-link></li>
+        <li><router-link to="/lienhe">Liên hệ</router-link></li>
       </ul>
       <div class="nav-right">
         <div class="search-bar">
