@@ -384,7 +384,7 @@ footer .container {
     background-color: #457b9d;
 }
 
-.btn-rent {
+.btnaddCart {
     background-color: #18d611;
     color: white;
     padding: 8px 16px;
@@ -397,7 +397,7 @@ footer .container {
     margin-bottom: 10px;
 }
 
-.btn-rent:hover {
+.btnaddCart:hover {
     background-color: #d00000;
 }
 
@@ -626,7 +626,7 @@ footer .container {
     background-color: #d00000;
 }
 
-.btn-pay {
+.btn-rent {
     background-color: #1D3557;
     color: white;
     padding: 10px 20px;
@@ -638,6 +638,86 @@ footer .container {
     margin: 0;
 }
 
-.btn-pay:hover {
+.btn-rent:hover {
     background-color: #457b9d;
 }
+
+.orders-button {
+    position: fixed;
+    bottom: 170px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background-color: #e63946;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 9999;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.orders-button img {
+    width: 28px;
+    height: 28px;
+}
+
+.orders-button:hover {
+    background-color: #d00000;
+    transform: scale(1.05);
+}
+
+#orders-count {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background-color: #1D3557;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/**/
+.mess-button {
+    position: fixed;
+    bottom: 170px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background-color: #e63946;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 9999;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.mess-button img {
+    width: 28px;
+    height: 28px;
+}
+
+.mess-button:hover {
+    background-color: #d00000;
+    transform: scale(1.05);
+}
+
+#mess-count {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background-color: #1D3557;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+

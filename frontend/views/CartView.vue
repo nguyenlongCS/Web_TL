@@ -61,13 +61,13 @@
 
       <!-- Các nút hành động -->
       <div class="cart-actions">
-        <router-link to="/sanpham" class="btn-back-cart">⬅ Tiếp tục thuê</router-link>
+        <router-link to="/sanpham" class="btn-back-cart">⬅ Trở về</router-link>
         <button 
           v-if="cart.length > 0"
-          class="btn-pay"
-          @click="handlePayment"
+          class="btn-rent"
+          @click="handleRent"
         >
-          Thanh toán
+          đặt ngay
         </button>
       </div>
     </div>
@@ -96,8 +96,8 @@ const {
 const { createOrder } = useOrders()
 const { userName } = useAuth()
 
-// Xử lý thanh toán
-const handlePayment = () => {
+// Xử lý đặt ngay
+const handleRent = () => {
   // Tạo đơn hàng mới
   const order = createOrder([...cart.value], cartTotal.value, userName.value)
   
@@ -105,7 +105,7 @@ const handlePayment = () => {
   clearCart()
   
   // Thông báo và chuyển đến trang đơn hàng
-  alert(`✅ Thanh toán thành công!\n\nMã đơn hàng: ${order.orderNumber}\n\nVui lòng chờ xác nhận từ chúng tôi.`)
+  alert(`✅ đặt ngay thành công!\n\nMã đơn hàng: ${order.orderNumber}\n\nVui lòng chờ xác nhận từ chúng tôi.`)
   
   router.push('/donhang')
 }

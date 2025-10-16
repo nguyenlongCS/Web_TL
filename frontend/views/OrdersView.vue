@@ -69,7 +69,7 @@
 
       <!-- Nút quay lại -->
       <div class="order-actions">
-        <router-link to="/sanpham" class="btn-back-order">⬅ Tiếp tục thuê</router-link>
+        <router-link to="/sanpham" class="btn-back-order">⬅ Trở về</router-link>
       </div>
     </div>
   </section>

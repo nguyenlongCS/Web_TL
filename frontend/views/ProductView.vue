@@ -61,7 +61,7 @@
           </p>
           <div class="product-buttons">
             <a href="#" class="btn-detail">Chi tiết</a>
-            <a href="#" class="btn-rent" @click.prevent="handleRent(product)">Đặt thuê</a>
+            <a href="#" class="btnaddCart" @click.prevent="handleAddCart(product)">Thêm vào giỏ</a>
           </div>
         </div>
       </div>
@@ -94,8 +94,8 @@ const getStars = (rating) => {
   return stars
 }
 
-// Xử lý khi nhấn đặt thuê
-const handleRent = (product) => {
+// Xử lý khi nhấn Thêm vào giỏ
+const handleAddCart = (product) => {
   addToCart(product)
   alert(`✅ Đã thêm "${product.name}" vào giỏ hàng!`)
 }
