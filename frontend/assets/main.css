@@ -34,7 +34,7 @@ a {
 .navbar {
     background-color: #e63946;
     color: white;
-    padding: 15px 0;
+    padding: 10px;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -134,7 +134,7 @@ a {
 footer {
     background-color: #1D3557;
     color: white;
-    padding: 20px 0;
+    padding: 10px;
     position: fixed;
     bottom: 0;
     width: 100%;
@@ -178,7 +178,7 @@ footer .container {
 
 /* ===== SLIDER ===== */
 .home-slider {
-    height: 500px;
+    height: 360px;
     position: relative;
     overflow: hidden;
 }
@@ -190,7 +190,7 @@ footer .container {
 
 .slider-images img {
     width: 100%;
-    height: 500px;
+    height: 100%;
     object-fit: cover;
     flex-shrink: 0;
 }
@@ -220,7 +220,7 @@ footer .container {
 
 /* ===== SECTIONS ===== */
 .home-section, .page-section {
-    padding: 60px 0;
+    padding: 30px;
     margin-bottom: 80px;
 }
 
@@ -475,7 +475,7 @@ footer .container {
 /* ===== FLOATING CART BUTTON ===== */
 .cart-button {
     position: fixed;
-    bottom: 100px;
+    bottom: 80px;
     right: 30px;
     width: 60px;
     height: 60px;
@@ -644,7 +644,7 @@ footer .container {
 
 .orders-button {
     position: fixed;
-    bottom: 170px;
+    bottom: 150px;
     right: 30px;
     width: 60px;
     height: 60px;
@@ -684,7 +684,7 @@ footer .container {
 /**/
 .mess-button {
     position: fixed;
-    bottom: 170px;
+    bottom: 220px;
     right: 30px;
     width: 60px;
     height: 60px;
