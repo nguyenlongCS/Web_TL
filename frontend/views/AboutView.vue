@@ -1,12 +1,8 @@
-<!-- frontend/views/AboutView.vue -->
-<!-- View trang giới thiệu -->
-
 <template>
   <section class="page-section">
     <div class="container">
       <h2>Giới thiệu về công ty</h2>
 
-      <!-- Company Overview -->
       <div class="about-intro">
         <div class="about-text">
           <h3>Lịch sử hình thành</h3>
@@ -22,7 +18,6 @@
         </div>
       </div>
 
-      <!-- Mission & Vision -->
       <div class="about-mission">
         <div class="about-image">
           <img src="/frontend/assets/img/intro2.jpg">
@@ -41,7 +36,6 @@
         </div>
       </div>
 
-      <!-- Core Values -->
       <div class="about-values">
         <div class="about-text">
           <h3>Giá trị cốt lõi</h3>
@@ -64,7 +58,6 @@
         </div>
       </div>
 
-      <!-- Team & Expertise -->
       <div class="about-team">
         <div class="about-image">
           <img src="/frontend/assets/img/intro4.jpg">
@@ -84,7 +77,6 @@
         </div>
       </div>
 
-      <!-- Achievements -->
       <div class="about-achievements">
         <div class="about-text">
           <h3>Thành tựu đạt được</h3>
@@ -109,7 +101,6 @@
         </div>
       </div>
 
-      <!-- Future Vision -->
       <div class="about-future">
         <h3>Định hướng tương lai</h3>
         <p>
@@ -123,9 +114,6 @@
     </div>
   </section>
 </template>
-
-<script setup>
-</script>
 
 <style scoped>
 .about-intro, .about-mission, .about-values, .about-team, .about-achievements {

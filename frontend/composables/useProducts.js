@@ -1,6 +1,3 @@
-// frontend/composables/useProducts.js
-// Quản lý danh sách sản phẩm và lọc/sắp xếp
-
 import { ref, computed } from 'vue'
 
 const products = ref([
@@ -126,42 +123,14 @@ const products = ref([
   }
 ])
 
+const loading = ref(false)
+
 export function useProducts() {
-  const categoryFilter = ref('all')
-  const priceSort = ref('none')
-  const ratingSort = ref('none')
-
-  // Lọc và sắp xếp sản phẩm
-  const filteredProducts = computed(() => {
-    let result = [...products.value]
-
-    // Lọc theo category
-    if (categoryFilter.value !== 'all') {
-      result = result.filter(p => p.category === categoryFilter.value)
-    }
-
-    // Sắp xếp theo giá
-    if (priceSort.value === 'asc') {
-      result.sort((a, b) => a.price - b.price)
-    } else if (priceSort.value === 'desc') {
-      result.sort((a, b) => b.price - a.price)
-    }
-
-    // Sắp xếp theo rating
-    if (ratingSort.value === 'high') {
-      result.sort((a, b) => b.rating - a.rating)
-    } else if (ratingSort.value === 'low') {
-      result.sort((a, b) => a.rating - b.rating)
-    }
-
-    return result
-  })
+  const featuredProducts = computed(() => products.value.slice(0, 3))
 
   return {
     products,
-    categoryFilter,
-    priceSort,
-    ratingSort,
-    filteredProducts
+    featuredProducts,
+    loading
   }
 }

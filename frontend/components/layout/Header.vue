@@ -1,9 +1,5 @@
-<!-- frontend/components/Header.vue -->
-<!-- Component header/navbar -->
-
 <template>
   <nav class="navbar">
-    <!-- User info bên trái -->
     <div v-if="isLoggedIn" class="user-info-left">
       <img src="/frontend/assets/icons/user-avatar.png" alt="Avatar" class="user-avatar">
       <span class="user-name-left">{{ userName }}</span>
@@ -30,12 +26,10 @@
           <input type="text" placeholder="Tìm kiếm...">
         </div>
         
-        <!-- Hiển thị khi chưa đăng nhập -->
         <router-link v-if="!isLoggedIn" to="/dangnhap" class="login-btn">
           Đăng nhập
         </router-link>
         
-        <!-- Hiển thị nút đăng xuất khi đã đăng nhập -->
         <button v-else @click="handleLogout" class="logout-btn">
           Đăng xuất
         </button>
@@ -46,12 +40,11 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
+import { useAuth } from '../../composables/useAuth'
 
 const router = useRouter()
 const { isLoggedIn, userName, logout } = useAuth()
 
-// Xử lý đăng xuất
 const handleLogout = () => {
   logout()
   alert('Đã đăng xuất thành công')

@@ -1,6 +1,3 @@
-<!-- frontend/components/Footer.vue -->
-<!-- Component footer -->
-
 <template>
   <footer>
     <div class="container">
@@ -26,9 +23,6 @@
     </div>
   </footer>
 </template>
-
-<script setup>
-</script>
 
 <style scoped>
 .social-link {

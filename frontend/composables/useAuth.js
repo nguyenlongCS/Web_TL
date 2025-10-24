@@ -1,28 +1,21 @@
-// frontend/composables/useAuth.js
-// Quản lý logic xác thực người dùng
-
 import { ref, computed } from 'vue'
 
-// State lưu thông tin user (dùng memory, không dùng localStorage)
 const currentUser = ref(null)
 const users = ref([])
+const loading = ref(false)
 
 export function useAuth() {
-  // Kiểm tra đã đăng nhập chưa
   const isLoggedIn = computed(() => currentUser.value !== null)
-  
-  // Lấy tên user hiện tại
   const userName = computed(() => currentUser.value?.name || '')
 
-  // Đăng ký tài khoản mới
   const register = (userData) => {
-    // Kiểm tra email đã tồn tại chưa
+    loading.value = true
     const exists = users.value.find(u => u.email === userData.email)
     if (exists) {
+      loading.value = false
       return { success: false, message: 'Email đã được sử dụng' }
     }
 
-    // Thêm user mới
     const newUser = {
       id: Date.now(),
       name: userData.name,
@@ -32,25 +25,24 @@ export function useAuth() {
     }
     users.value.push(newUser)
 
-    // Tự động đăng nhập sau khi đăng ký
     currentUser.value = { ...newUser }
-    delete currentUser.value.password // Không lưu password trong session
+    delete currentUser.value.password
 
+    loading.value = false
     return { success: true, message: 'Đăng ký thành công' }
   }
 
-  // Đăng nhập
   const login = (email, password) => {
-    // Tìm user theo email và password
+    loading.value = true
     const user = users.value.find(
       u => u.email === email && u.password === password
     )
 
     if (!user) {
+      loading.value = false
       return { success: false, message: 'Email hoặc mật khẩu không đúng' }
     }
 
-    // Lưu thông tin user (không lưu password)
     currentUser.value = {
       id: user.id,
       name: user.name,
@@ -58,12 +50,14 @@ export function useAuth() {
       phone: user.phone
     }
 
+    loading.value = false
     return { success: true, message: 'Đăng nhập thành công' }
   }
 
-  // Đăng xuất
   const logout = () => {
+    loading.value = true
     currentUser.value = null
+    loading.value = false
   }
 
   return {
@@ -72,6 +66,7 @@ export function useAuth() {
     userName,
     register,
     login,
-    logout
+    logout,
+    loading
   }
 }

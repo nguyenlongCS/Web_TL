@@ -1,13 +1,9 @@
-<!-- frontend/views/ContactView.vue -->
-<!-- View trang liên hệ -->
-
 <template>
   <section class="page-section">
     <div class="container">
       <h2>Liên hệ</h2>
       
       <div class="contact-container">
-        <!-- Google Map -->
         <div class="map">
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4609544062434!2d106.68427161420098!3d10.775061061969923!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f38f9a4b7d5%3A0x4b2f68cfab6e4fb!2zVGjDoG5oIHBo4buRIEjhu5MgQ2jDrSBNaW5o!5e0!3m2!1svi!2s!4v1697000000000"
@@ -19,7 +15,6 @@
           ></iframe>
         </div>
 
-        <!-- Contact Form -->
         <form class="contact-form" @submit.prevent="handleSubmit">
           <h3 style="color: #e63946; margin-bottom: 20px;">Gửi thông tin liên hệ</h3>
           <input 
@@ -58,7 +53,6 @@
         </form>
       </div>
 
-      <!-- Contact Info Section -->
       <div class="contact-info-grid">
         <div class="info-card">
           <h3>Địa chỉ showroom</h3>
@@ -97,7 +91,6 @@
 <script setup>
 import { ref } from 'vue'
 
-// Dữ liệu form
 const formData = ref({
   name: '',
   email: '',
@@ -106,10 +99,8 @@ const formData = ref({
   message: ''
 })
 
-// Xử lý submit form
 const handleSubmit = () => {
   alert('Form đã gửi (mock)')
-  // Reset form
   formData.value = {
     name: '',
     email: '',
