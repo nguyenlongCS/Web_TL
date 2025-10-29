@@ -26,7 +26,8 @@ defineProps({
 defineEmits(['submit'])
 </script>
 
-<style scoped>
+<style>
+/* Bỏ scoped để CSS áp dụng cho slot content */
 .auth-container {
   display: flex;
   justify-content: center;
@@ -36,7 +37,7 @@ defineEmits(['submit'])
 
 .auth-box {
   background: white;
-  padding: 40px;
+  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   width: 100%;

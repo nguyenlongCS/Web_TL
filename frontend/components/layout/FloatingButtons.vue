@@ -15,4 +15,7 @@
 <script setup>
 import { useCart } from '../../composables/useCart'
 import { useOrders } from '../../composables/useOrders'
+
+const { cartCount } = useCart()
+const { orderCount } = useOrders()
 </script>

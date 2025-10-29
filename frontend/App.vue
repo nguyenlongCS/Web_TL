@@ -1,21 +1,15 @@
 <!-- frontend/App.vue -->
-<!-- Component gốc của ứng dụng -->
-
 <template>
   <div id="app">
     <Header />
     <router-view />
     <Footer />
-    <Orders />
-    <Cart />
-    <!-- <Mess /> -->
+    <FloatingButtons />
   </div>
 </template>
 
 <script setup>
-import Header from './components/Header.vue'
-import Footer from './components/Footer.vue'
-import Mess from './components/Mess.vue'
-import Orders from './components/Orders.vue'
-import Cart from './components/Cart.vue'
+import Header from './components/layout/Header.vue'
+import Footer from './components/layout/Footer.vue'
+import FloatingButtons from './components/layout/FloatingButtons.vue'
 </script>
