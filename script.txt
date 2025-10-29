@@ -1,0 +1,10 @@
+npm run dev - Chạy frontend (Vite)
+npm run build - Build frontend
+npm run review - Preview frontend build
+
+npm run server - Chạy backend với nodemon (auto-restart)
+npm run seed - Import dữ liệu mẫu vào MongoDB
+npm run dev:all - Chạy cả frontend + backend cùng lúc 
+npm start - Chạy backend production mode
+
+npm run - Kiểm tra script có sẵn

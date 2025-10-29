@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "nodemon backend/server.js",
+    "seed": "node backend/seeds/seedData.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -19,6 +23,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.10",
     "vite": "^5.0.0"
   }
