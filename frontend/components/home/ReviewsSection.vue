@@ -1,14 +1,29 @@
+<!-- frontend/components/home/ReviewsSection.vue -->
+<!-- Section đánh giá trang chủ - sử dụng dữ liệu từ API -->
+
 <template>
   <section class="home-section home-reviews">
     <div class="container">
       <h2>Đánh giá của khách hàng</h2>
-      <div class="reviews-grid">
+      
+      <!-- Hiển thị loading -->
+      <div v-if="loading" style="text-align: center; padding: 30px;">
+        <p style="color: #e63946;">Đang tải đánh giá...</p>
+      </div>
+      
+      <!-- Hiển thị lỗi -->
+      <div v-else-if="error" style="text-align: center; padding: 30px;">
+        <p style="color: #ef4444;">{{ error }}</p>
+      </div>
+      
+      <!-- Hiển thị danh sách đánh giá -->
+      <div v-else class="reviews-grid">
         <ReviewCard 
           v-for="review in reviews" 
-          :key="review.id"
+          :key="review._id"
           :avatar="review.avatar"
           :author="review.author"
-          :stars="review.stars"
+          :stars="review.starsText"
           :text="review.text"
         />
       </div>
@@ -17,30 +32,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import ReviewCard from '../common/ReviewCard.vue'
+import { useReviews } from '../../composables/useReviews'
 
-const reviews = ref([
-  {
-    id: 1,
-    avatar: '/frontend/assets/img/avatar1.jpg',
-    author: 'Anh Tuấn',
-    stars: '★★★★★',
-    text: '"Chất lượng âm thanh tuyệt vời, nhân viên hỗ trợ rất nhiệt tình!"'
-  },
-  {
-    id: 2,
-    avatar: '/frontend/assets/img/avatar2.jpg',
-    author: 'Chị Hương',
-    stars: '★★★★★',
-    text: '"Tôi thuê thiết bị cho sự kiện công ty, mọi thứ diễn ra suôn sẻ."'
-  },
-  {
-    id: 3,
-    avatar: '/frontend/assets/img/avatar3.jpg',
-    author: 'Nhật Minh',
-    stars: '★★★★',
-    text: '"Giá cả hợp lý, dịch vụ chuyên nghiệp. Rất đáng để hợp tác lâu dài."'
-  }
-])
+// Sử dụng composable để lấy dữ liệu từ API
+const { reviews, loading, error } = useReviews()
 </script>

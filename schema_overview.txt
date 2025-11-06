@@ -1,0 +1,64 @@
+[products]
+- __v: int
+- _id: objectId
+- category: string
+- createdAt: date
+- description: string
+- imgSrc: string
+- name: string
+- price: int
+- priceText: string
+- rating: double, int
+- stock: int
+- updatedAt: date
+
+[services]
+- __v: int
+- _id: objectId
+- active: bool
+- createdAt: date
+- description: string
+- imgSrc: string
+- order: int
+- title: string
+- updatedAt: date
+
+[projects]
+- __v: int
+- _id: objectId
+- client: string
+- completedDate: date
+- createdAt: date
+- description: string
+- featured: bool
+- imgSrc: string
+- name: string
+- updatedAt: date
+- value: int, double
+
+[reviews]
+- __v: int
+- _id: objectId
+- approved: bool
+- author: string
+- avatar: string
+- createdAt: date
+- productId: null
+- stars: int
+- starsText: string
+- text: string
+- updatedAt: date
+- userId: null
+
+[orders]
+
+[users]
+- __v: int
+- _id: objectId
+- createdAt: date
+- email: string
+- name: string
+- password: string
+- phone: string
+- role: string
+- updatedAt: date

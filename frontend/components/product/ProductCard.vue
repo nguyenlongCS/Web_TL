@@ -1,3 +1,6 @@
+<!-- frontend/components/product/ProductCard.vue -->
+<!-- Component hiển thị một sản phẩm với dữ liệu từ MongoDB -->
+
 <template>
   <div class="product-item">
     <img :src="product.imgSrc" :alt="product.name">

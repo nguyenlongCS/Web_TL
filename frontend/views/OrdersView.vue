@@ -1,24 +1,47 @@
+<!-- frontend/views/OrdersView.vue -->
+<!-- Trang đơn hàng - lấy dữ liệu từ API -->
+
 <template>
   <section class="page-section">
     <div class="container">
       <h2>Đơn hàng của bạn</h2>
       
-      <div v-if="orders.length === 0" id="orders-container">
+      <!-- Hiển thị loading -->
+      <div v-if="loading" id="orders-container">
+        <p style="text-align: center; color: #e63946;">Đang tải đơn hàng...</p>
+      </div>
+      
+      <!-- Hiển thị lỗi -->
+      <div v-else-if="error" id="orders-container">
+        <p style="text-align: center; color: #ef4444;">{{ error }}</p>
+      </div>
+      
+      <!-- Hiển thị khi chưa đăng nhập -->
+      <div v-else-if="!isLoggedIn" id="orders-container">
+        <p style="text-align: center;">⚠️ Vui lòng đăng nhập để xem đơn hàng.</p>
+        <div style="text-align: center; margin-top: 20px;">
+          <router-link to="/dangnhap" class="btn-back-order">Đăng nhập</router-link>
+        </div>
+      </div>
+      
+      <!-- Hiển thị khi chưa có đơn hàng -->
+      <div v-else-if="orders.length === 0" id="orders-container">
         <p>📦 Bạn chưa có đơn hàng nào.</p>
       </div>
 
+      <!-- Hiển thị danh sách đơn hàng -->
       <div v-else id="orders-container">
         <OrderCard 
           v-for="order in orders" 
-          :key="order.id"
-          :order="order"
+          :key="order._id"
+          :order="formatOrder(order)"
           :statusText="getStatusText(order.status)"
           :statusColor="getStatusColor(order.status)"
           @cancel="handleCancelOrder"
         />
       </div>
 
-      <div class="order-actions">
+      <div v-if="!loading && isLoggedIn" class="order-actions">
         <router-link to="/sanpham" class="btn-back-order">⬅ Trở về</router-link>
       </div>
     </div>
@@ -26,17 +49,42 @@
 </template>
 
 <script setup>
+import { computed, watch } from 'vue'
 import OrderCard from '../components/order/OrderCard.vue'
 import { useOrders } from '../composables/useOrders'
+import { useAuth } from '../composables/useAuth'
+import { formatDate } from '../utils/formatters'
 
-const { orders, cancelOrder, getStatusText, getStatusColor } = useOrders()
+const { orders, loading, error, fetchMyOrders, cancelOrder, getStatusText, getStatusColor } = useOrders()
+const { isLoggedIn } = useAuth()
 
-const handleCancelOrder = (orderId) => {
-  if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
-    const result = cancelOrder(orderId)
-    alert(result.message)
+// Format order để hiển thị
+const formatOrder = (order) => {
+  return {
+    ...order,
+    id: order._id,
+    createdAt: formatDate(order.createdAt)
   }
 }
+
+// Hàm hủy đơn hàng
+const handleCancelOrder = async (orderId) => {
+  if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+    const result = await cancelOrder(orderId)
+    if (result.success) {
+      alert('✅ ' + result.message)
+    } else {
+      alert('❌ ' + result.message)
+    }
+  }
+}
+
+// Load lại đơn hàng khi user đăng nhập
+watch(isLoggedIn, (newValue) => {
+  if (newValue) {
+    fetchMyOrders()
+  }
+})
 </script>
 
 <style scoped>

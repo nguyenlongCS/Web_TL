@@ -1,0 +1,18 @@
+mongosh
+show databases/show dbs
+use mydb
+show tables/show collections
+db.stats()
+db.users.find()
+db.users.find().limit(5)
+db.users.find().pretty()
+db.getCollectionNames().forEach(c => {
+  print(`\n[${c}]`);
+  db.getCollection(c).aggregate([
+    { $project: { f: { $objectToArray: "$$ROOT" } } },
+    { $unwind: "$f" },
+    { $group: { _id: "$f.k", t: { $addToSet: { $type: "$f.v" } } } },
+    { $sort: { _id: 1 } }
+  ]).forEach(f => print(`- ${f._id}: ${f.t.join(', ')}`));
+});
+
