@@ -1,3 +1,4 @@
+<!-- frontend/views/LoginView.vue -->
 <template>
   <section class="page-section">
     <div class="container">
@@ -28,6 +29,11 @@
             required
           >
         </div>
+
+        <!-- Loading indicator -->
+        <p v-if="loading" style="text-align: center; color: #e63946;">
+          Đang đăng nhập...
+        </p>
       </AuthForm>
     </div>
   </section>
@@ -40,15 +46,15 @@ import AuthForm from '../components/common/AuthForm.vue'
 import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
-const { login } = useAuth()
+const { login, loading } = useAuth()
 
 const formData = ref({
   email: '',
   password: ''
 })
 
-const handleLogin = () => {
-  const result = login(formData.value.email, formData.value.password)
+const handleLogin = async () => {
+  const result = await login(formData.value.email, formData.value.password)
   
   if (result.success) {
     alert(result.message)

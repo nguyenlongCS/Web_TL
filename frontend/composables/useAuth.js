@@ -1,64 +1,86 @@
+// frontend/composables/useAuth.js
 import { ref, computed } from 'vue'
+import api from '../utils/api'
 
 const currentUser = ref(null)
-const users = ref([])
+const token = ref(localStorage.getItem('token') || null)
 const loading = ref(false)
 
 export function useAuth() {
   const isLoggedIn = computed(() => currentUser.value !== null)
   const userName = computed(() => currentUser.value?.name || '')
 
-  const register = (userData) => {
-    loading.value = true
-    const exists = users.value.find(u => u.email === userData.email)
-    if (exists) {
-      loading.value = false
-      return { success: false, message: 'Email đã được sử dụng' }
+  // Load user từ localStorage khi khởi động
+  const loadUser = () => {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser && token.value) {
+      try {
+        currentUser.value = JSON.parse(savedUser)
+      } catch (e) {
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+      }
     }
-
-    const newUser = {
-      id: Date.now(),
-      name: userData.name,
-      email: userData.email,
-      password: userData.password,
-      phone: userData.phone || ''
-    }
-    users.value.push(newUser)
-
-    currentUser.value = { ...newUser }
-    delete currentUser.value.password
-
-    loading.value = false
-    return { success: true, message: 'Đăng ký thành công' }
   }
 
-  const login = (email, password) => {
+  // Đăng ký
+  const register = async (userData) => {
     loading.value = true
-    const user = users.value.find(
-      u => u.email === email && u.password === password
-    )
-
-    if (!user) {
+    try {
+      const { data } = await api.post('/auth/register', userData)
+      
+      if (data.success) {
+        currentUser.value = data.user
+        token.value = data.token
+        localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('token', data.token)
+        loading.value = false
+        return { success: true, message: data.message }
+      }
+    } catch (error) {
       loading.value = false
-      return { success: false, message: 'Email hoặc mật khẩu không đúng' }
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Đăng ký thất bại' 
+      }
     }
-
-    currentUser.value = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone
-    }
-
-    loading.value = false
-    return { success: true, message: 'Đăng nhập thành công' }
   }
 
+  // Đăng nhập
+  const login = async (email, password) => {
+    loading.value = true
+    try {
+      const { data } = await api.post('/auth/login', { email, password })
+      
+      if (data.success) {
+        currentUser.value = data.user
+        token.value = data.token
+        localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('token', data.token)
+        loading.value = false
+        return { success: true, message: data.message }
+      }
+    } catch (error) {
+      loading.value = false
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Đăng nhập thất bại' 
+      }
+    }
+  }
+
+  // Đăng xuất
   const logout = () => {
     loading.value = true
     currentUser.value = null
+    token.value = null
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
     loading.value = false
   }
+
+  // Load user khi khởi động
+  loadUser()
 
   return {
     currentUser,

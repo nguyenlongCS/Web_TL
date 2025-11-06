@@ -1,6 +1,7 @@
 // backend/seeds/seedData.js
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
+import bcrypt from 'bcryptjs'
 import User from '../models/User.js'
 import Product from '../models/Product.js'
 import Service from '../models/Service.js'
@@ -20,19 +21,25 @@ const connectDB = async () => {
   }
 }
 
+// Hash password trước khi seed
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10)
+  return await bcrypt.hash(password, salt)
+}
+
 // Data mẫu
 const users = [
   {
     name: 'Admin',
     email: 'admin@thanhluan.com',
-    password: '123456',
+    password: '123456', // Plain password
     phone: '0999999999',
     role: 'admin'
   },
   {
     name: 'Nguyễn Văn A',
     email: 'user@test.com',
-    password: '123456',
+    password: '123456', // Plain password
     phone: '0911111111',
     role: 'user'
   }
@@ -320,8 +327,17 @@ const importData = async () => {
     
     console.log('🗑️  Đã xóa dữ liệu cũ')
 
-    // Thêm dữ liệu mới
-    await User.insertMany(users)
+    // Hash passwords cho users
+    console.log('🔐 Đang hash passwords...')
+    const usersWithHashedPasswords = await Promise.all(
+      users.map(async (user) => ({
+        ...user,
+        password: await hashPassword(user.password)
+      }))
+    )
+
+    // Thêm dữ liệu mới (insertMany sẽ KHÔNG trigger pre('save'))
+    await User.insertMany(usersWithHashedPasswords)
     console.log('✅ Users imported')
 
     await Product.insertMany(products)
@@ -343,6 +359,13 @@ const importData = async () => {
     console.log(`   - Services: ${services.length}`)
     console.log(`   - Projects: ${projects.length}`)
     console.log(`   - Reviews: ${reviews.length}`)
+    console.log('\n👤 Thông tin đăng nhập:')
+    console.log('   Admin:')
+    console.log('   - Email: admin@thanhluan.com')
+    console.log('   - Password: 123456')
+    console.log('   User:')
+    console.log('   - Email: user@test.com')
+    console.log('   - Password: 123456')
     
     process.exit()
   } catch (error) {

@@ -13,17 +13,17 @@ import serviceRoutes from './routes/services.js'
 import projectRoutes from './routes/projects.js'
 import reviewRoutes from './routes/reviews.js'
 
-// Load environment variables
 dotenv.config({ path: './backend/.env' })
-
-// Kết nối MongoDB
 connectDB()
 
-// Khởi tạo Express app
 const app = express()
 
-// Middleware
-app.use(cors())
+// CORS configuration - CHO PHÉP FRONTEND GỌI API
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite default port
+  credentials: true
+}))
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -43,7 +43,6 @@ app.get('/', (req, res) => {
   })
 })
 
-// API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
@@ -51,11 +50,9 @@ app.use('/api/services', serviceRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/reviews', reviewRoutes)
 
-// Error Handling Middleware
 app.use(notFound)
 app.use(errorHandler)
 
-// Start server
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log('=================================')

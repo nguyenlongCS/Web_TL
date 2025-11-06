@@ -1,3 +1,4 @@
+<!-- frontend/views/RegisterView.vue -->
 <template>
   <section class="page-section">
     <div class="container">
@@ -57,6 +58,11 @@
             required
           >
         </div>
+
+        <!-- Loading indicator -->
+        <p v-if="loading" style="text-align: center; color: #e63946;">
+          Đang xử lý...
+        </p>
       </AuthForm>
     </div>
   </section>
@@ -69,7 +75,7 @@ import AuthForm from '../components/common/AuthForm.vue'
 import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
-const { register } = useAuth()
+const { register, loading } = useAuth()
 
 const formData = ref({
   name: '',
@@ -79,7 +85,7 @@ const formData = ref({
   confirmPassword: ''
 })
 
-const handleRegister = () => {
+const handleRegister = async () => {
   if (formData.value.password !== formData.value.confirmPassword) {
     alert('Mật khẩu xác nhận không khớp')
     return
@@ -90,7 +96,7 @@ const handleRegister = () => {
     return
   }
 
-  const result = register({
+  const result = await register({
     name: formData.value.name,
     email: formData.value.email,
     phone: formData.value.phone,
