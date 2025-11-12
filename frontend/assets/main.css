@@ -369,7 +369,7 @@ footer .container {
 
 .btn-detail {
     background-color: #1D3557;
-    color: white;
+    color: white !important;
     padding: 8px 16px;
     border-radius: 15px;
     font-size: 14px;
@@ -385,8 +385,8 @@ footer .container {
 }
 
 .btnaddCart {
-    background-color: #18d611;
-    color: white;
+    background-color: #10b981;
+    color: white !important;
     padding: 8px 16px;
     border-radius: 15px;
     font-size: 14px;
@@ -398,7 +398,7 @@ footer .container {
 }
 
 .btnaddCart:hover {
-    background-color: #d00000;
+    background-color: #059969;
 }
 
 .btn-more {

@@ -37,3 +37,12 @@ export const admin = (req, res, next) => {
     res.status(403).json({ message: 'Không có quyền truy cập, chỉ admin mới được phép' })
   }
 }
+
+// 
+export const employeeOrAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'employee' || req.user.role === 'admin')) {
+    next()
+  } else {
+    res.status(403).json({ message: 'Không có quyền truy cập, chỉ nhân viên hoặc admin mới được phép' })
+  }
+}

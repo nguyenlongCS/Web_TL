@@ -11,6 +11,8 @@ import ContactView from '../views/ContactView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import OrdersView from '../views/OrdersView.vue'
+import AddProductView from '../views/AddProductView.vue'
+import ProductDetailView from '../views/ProductDetailView.vue'
 
 const routes = [
   {
@@ -22,6 +24,11 @@ const routes = [
     path: '/gioithieu',
     name: 'about',
     component: AboutView
+  },
+  {
+    path: '/sanpham/:id',
+    name: 'product-detail',
+    component: ProductDetailView
   },
   {
     path: '/sanpham',
@@ -57,6 +64,11 @@ const routes = [
     path: '/dangky',
     name: 'register',
     component: RegisterView
+  },
+  {
+    path: '/sanpham/them',
+    name: 'add-product',
+    component: AddProductView
   }
 ]
 

@@ -8,7 +8,7 @@
 - name: string
 - price: int
 - priceText: string
-- rating: double, int
+- rating: int, double
 - stock: int
 - updatedAt: date
 
@@ -51,6 +51,16 @@
 - userId: null
 
 [orders]
+- __v: int
+- _id: objectId
+- createdAt: date
+- items: array
+- orderNumber: string
+- status: string
+- totalAmount: int
+- updatedAt: date
+- userId: objectId
+- userName: string
 
 [users]
 - __v: int

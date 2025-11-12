@@ -18,7 +18,7 @@
       Giá thuê: <strong>{{ product.priceText }}</strong>
     </p>
     <div class="product-buttons">
-      <a href="#" class="btn-detail">Chi tiết</a>
+      <router-link :to="`/sanpham/${product._id}`" class="btn-detail">Chi tiết</router-link>
       <a href="#" class="btnaddCart" @click.prevent="$emit('add-to-cart', product)">
         Thêm vào giỏ
       </a>

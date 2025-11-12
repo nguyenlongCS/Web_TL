@@ -8,14 +8,14 @@ import {
   updateProduct,
   deleteProduct
 } from '../controllers/productController.js'
-import { protect, admin } from '../middleware/auth.js'
+import { protect, admin, employeeOrAdmin } from '../middleware/auth.js'
 
 const router = express.Router()
 
 router.get('/', getProducts)
 router.get('/featured', getFeaturedProducts)
 router.get('/:id', getProductById)
-router.post('/', protect, admin, createProduct)
+router.post('/', protect, employeeOrAdmin, createProduct)
 router.put('/:id', protect, admin, updateProduct)
 router.delete('/:id', protect, admin, deleteProduct)
 
