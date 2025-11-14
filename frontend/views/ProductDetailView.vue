@@ -100,6 +100,16 @@
               {{ product.stock === 0 ? 'Hết hàng' : '🛒 Thêm vào giỏ hàng' }}
             </button>
           </div>
+
+          <!-- Nút Sửa/Xóa cho admin và employee -->
+          <div v-if="canEdit" class="admin-actions">
+            <router-link :to="`/sanpham/${product._id}/sua`" class="btn-edit">
+              ✏️ Sửa sản phẩm
+            </router-link>
+            <button class="btn-delete" @click="handleDelete">
+              🗑️ Xóa sản phẩm
+            </button>
+          </div>
         </div>
       </div>
 
@@ -120,17 +130,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProducts } from '../composables/useProducts'
 import { useCart } from '../composables/useCart'
+import { useAuth } from '../composables/useAuth'
 import { formatStars } from '../utils/formatters'
 import { CATEGORY_LABELS } from '../utils/constants'
+import api from '../utils/api'
 
 const route = useRoute()
 const router = useRouter()
 const { fetchProductById } = useProducts()
 const { addToCart } = useCart()
+const { currentUser } = useAuth()
 
 // State
 const product = ref(null)
@@ -140,6 +153,11 @@ const error = ref(null)
 // State cho modal xem ảnh
 const showMediaModal = ref(false)
 const selectedMedia = ref(null)
+
+// Kiểm tra quyền sửa/xóa (chỉ admin và employee)
+const canEdit = computed(() => {
+  return currentUser.value && (currentUser.value.role === 'admin' || currentUser.value.role === 'employee')
+})
 
 // Lấy label của category
 const getCategoryLabel = (category) => {
@@ -186,6 +204,26 @@ const openMediaModal = (media) => {
 const closeMediaModal = () => {
   showMediaModal.value = false
   selectedMedia.value = null
+}
+
+// Xóa sản phẩm
+const handleDelete = async () => {
+  if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.value.name}"?`)) {
+    return
+  }
+
+  try {
+    const { data } = await api.delete(`/products/${product.value._id}`)
+    
+    if (data.success) {
+      alert('✅ ' + data.message)
+      router.push('/sanpham')
+    } else {
+      alert('❌ Xóa sản phẩm thất bại!')
+    }
+  } catch (error) {
+    alert('❌ ' + (error.response?.data?.message || 'Có lỗi xảy ra khi xóa sản phẩm!'))
+  }
 }
 
 // Load sản phẩm khi component mount
@@ -407,6 +445,46 @@ video.media-content:hover {
 .btn-add-cart:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #f3f4f6;
+}
+
+.btn-edit,
+.btn-delete {
+  flex: 1;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-edit {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #d97706;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #dc2626;
 }
 
 .media-modal {

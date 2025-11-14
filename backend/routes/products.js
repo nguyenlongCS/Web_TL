@@ -1,4 +1,5 @@
 // backend/routes/products.js
+// Routes cho sản phẩm - cập nhật quyền sửa/xóa cho employee
 import express from 'express'
 import {
   getProducts,
@@ -16,7 +17,7 @@ router.get('/', getProducts)
 router.get('/featured', getFeaturedProducts)
 router.get('/:id', getProductById)
 router.post('/', protect, employeeOrAdmin, createProduct)
-router.put('/:id', protect, admin, updateProduct)
-router.delete('/:id', protect, admin, deleteProduct)
+router.put('/:id', protect, employeeOrAdmin, updateProduct)
+router.delete('/:id', protect, employeeOrAdmin, deleteProduct)
 
 export default router

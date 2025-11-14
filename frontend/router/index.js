@@ -1,6 +1,5 @@
 // frontend/router/index.js
-// Cấu hình routing cho ứng dụng
-
+// Cấu hình routing cho ứng dụng - thêm route sửa sản phẩm
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
@@ -12,6 +11,7 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import OrdersView from '../views/OrdersView.vue'
 import AddProductView from '../views/AddProductView.vue'
+import EditProductView from '../views/EditProductView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
 
 const routes = [
@@ -29,6 +29,11 @@ const routes = [
     path: '/sanpham/:id',
     name: 'product-detail',
     component: ProductDetailView
+  },
+  {
+    path: '/sanpham/:id/sua',
+    name: 'edit-product',
+    component: EditProductView
   },
   {
     path: '/sanpham',

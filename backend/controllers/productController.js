@@ -1,4 +1,5 @@
 // backend/controllers/productController.js
+// Controller xử lý các API liên quan đến sản phẩm
 import Product from '../models/Product.js'
 
 // @desc    Lấy tất cả sản phẩm (có filter & sort)
@@ -83,7 +84,7 @@ export const getProductById = async (req, res) => {
 
 // @desc    Tạo sản phẩm mới
 // @route   POST /api/products
-// @access  Private/Admin
+// @access  Private/Admin/Employee
 export const createProduct = async (req, res) => {
   try {
     const product = await Product.create(req.body)
@@ -99,7 +100,7 @@ export const createProduct = async (req, res) => {
 
 // @desc    Cập nhật sản phẩm
 // @route   PUT /api/products/:id
-// @access  Private/Admin
+// @access  Private/Admin/Employee
 export const updateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
@@ -124,7 +125,7 @@ export const updateProduct = async (req, res) => {
 
 // @desc    Xóa sản phẩm
 // @route   DELETE /api/products/:id
-// @access  Private/Admin
+// @access  Private/Admin/Employee
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id)
