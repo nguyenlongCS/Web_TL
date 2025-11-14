@@ -1,4 +1,5 @@
 // backend/controllers/orderController.js
+// Controller xử lý đơn hàng - thêm chức năng duyệt đơn
 import Order from '../models/Order.js'
 
 // @desc    Tạo đơn hàng mới
@@ -39,6 +40,7 @@ export const createOrder = async (req, res) => {
 export const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ userId: req.user._id })
+      .populate('approvedBy', 'name')
       .sort({ createdAt: -1 })
 
     res.json({
@@ -53,11 +55,12 @@ export const getMyOrders = async (req, res) => {
 
 // @desc    Lấy tất cả đơn hàng
 // @route   GET /api/orders/all
-// @access  Private/Admin
+// @access  Private/Admin/Employee
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find({})
       .populate('userId', 'name email')
+      .populate('approvedBy', 'name')
       .sort({ createdAt: -1 })
 
     res.json({
@@ -77,10 +80,16 @@ export const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('userId', 'name email phone')
+      .populate('approvedBy', 'name')
 
     if (order) {
-      // Kiểm tra quyền: chỉ user sở hữu hoặc admin mới xem được
-      if (order.userId && order.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      // Kiểm tra quyền: chỉ user sở hữu hoặc admin/employee mới xem được
+      if (
+        order.userId && 
+        order.userId.toString() !== req.user._id.toString() && 
+        req.user.role !== 'admin' && 
+        req.user.role !== 'employee'
+      ) {
         return res.status(403).json({ message: 'Không có quyền xem đơn hàng này' })
       }
 
@@ -105,7 +114,11 @@ export const cancelOrder = async (req, res) => {
 
     if (order) {
       // Kiểm tra quyền
-      if (order.userId && order.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      if (
+        order.userId && 
+        order.userId.toString() !== req.user._id.toString() && 
+        req.user.role !== 'admin'
+      ) {
         return res.status(403).json({ message: 'Không có quyền hủy đơn hàng này' })
       }
 
@@ -128,17 +141,29 @@ export const cancelOrder = async (req, res) => {
   }
 }
 
-// @desc    Cập nhật trạng thái đơn hàng
+// @desc    Cập nhật trạng thái đơn hàng (Duyệt/Từ chối)
 // @route   PUT /api/orders/:id/status
-// @access  Private/Admin
+// @access  Private/Admin/Employee
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body
     const order = await Order.findById(req.params.id)
 
     if (order) {
+      // Cập nhật trạng thái
       order.status = status
+      
+      // Lưu thông tin người duyệt nếu duyệt hoặc từ chối
+      if (status === 'approved' || status === 'rejected') {
+        order.approvedBy = req.user._id
+        order.approvedByName = req.user.name
+        order.approvedAt = new Date()
+      }
+
       const updatedOrder = await order.save()
+
+      // Populate thông tin người duyệt
+      await updatedOrder.populate('approvedBy', 'name')
 
       res.json({
         success: true,

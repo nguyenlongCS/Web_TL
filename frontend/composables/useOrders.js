@@ -1,16 +1,17 @@
 // frontend/composables/useOrders.js
-// Composable quản lý orders từ API thay vì local state
-
+// Composable quản lý orders - thêm chức năng duyệt đơn
 import { ref, computed, onMounted } from 'vue'
 import { ORDER_STATUS, ORDER_STATUS_TEXT, ORDER_STATUS_COLOR } from '../utils/constants'
 import api from '../utils/api'
 
 const orders = ref([])
+const allOrders = ref([])
 const loading = ref(false)
 const error = ref(null)
 
 export function useOrders() {
   const orderCount = computed(() => orders.value.length)
+  const allOrderCount = computed(() => allOrders.value.length)
 
   // Lấy danh sách đơn hàng của user
   const fetchMyOrders = async () => {
@@ -30,6 +31,24 @@ export function useOrders() {
     }
   }
 
+  // Lấy tất cả đơn hàng (admin và employee)
+  const fetchAllOrders = async () => {
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await api.get('/orders/all')
+      
+      if (data.success) {
+        allOrders.value = data.orders
+      }
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Không thể tải đơn hàng'
+      console.error('Lỗi khi tải all orders:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Tạo đơn hàng mới
   const createOrder = async (cartItems, totalAmount) => {
     loading.value = true
@@ -41,7 +60,6 @@ export function useOrders() {
       })
       
       if (data.success) {
-        // Thêm đơn hàng mới vào đầu danh sách
         orders.value.unshift(data.order)
         return { success: true, order: data.order, message: data.message }
       }
@@ -68,6 +86,13 @@ export function useOrders() {
         if (index !== -1) {
           orders.value.splice(index, 1)
         }
+        
+        // Xóa khỏi allOrders nếu có
+        const allIndex = allOrders.value.findIndex(o => o._id === orderId)
+        if (allIndex !== -1) {
+          allOrders.value.splice(allIndex, 1)
+        }
+        
         return { success: true, message: data.message }
       }
       return { success: false, message: 'Không thể hủy đơn hàng' }
@@ -80,7 +105,7 @@ export function useOrders() {
     }
   }
 
-  // Cập nhật trạng thái đơn hàng (Admin only)
+  // Cập nhật trạng thái đơn hàng (Duyệt/Từ chối)
   const updateOrderStatus = async (orderId, newStatus) => {
     loading.value = true
     error.value = null
@@ -90,19 +115,33 @@ export function useOrders() {
       })
       
       if (data.success) {
-        // Cập nhật đơn hàng trong danh sách local
-        const order = orders.value.find(o => o._id === orderId)
+        // Cập nhật đơn hàng trong allOrders
+        const order = allOrders.value.find(o => o._id === orderId)
         if (order) {
           order.status = newStatus
+          order.approvedBy = data.order.approvedBy
+          order.approvedByName = data.order.approvedByName
+          order.approvedAt = data.order.approvedAt
           order.updatedAt = data.order.updatedAt
         }
+        
+        // Cập nhật trong orders nếu có
+        const myOrder = orders.value.find(o => o._id === orderId)
+        if (myOrder) {
+          myOrder.status = newStatus
+          myOrder.approvedBy = data.order.approvedBy
+          myOrder.approvedByName = data.order.approvedByName
+          myOrder.approvedAt = data.order.approvedAt
+          myOrder.updatedAt = data.order.updatedAt
+        }
+        
         return { success: true, message: data.message }
       }
-      return { success: false }
+      return { success: false, message: 'Không thể cập nhật trạng thái' }
     } catch (err) {
       error.value = err.response?.data?.message || 'Không thể cập nhật trạng thái'
       console.error('Lỗi khi cập nhật order status:', err)
-      return { success: false }
+      return { success: false, message: error.value }
     } finally {
       loading.value = false
     }
@@ -141,10 +180,13 @@ export function useOrders() {
 
   return {
     orders,
+    allOrders,
     orderCount,
+    allOrderCount,
     loading,
     error,
     fetchMyOrders,
+    fetchAllOrders,
     createOrder,
     cancelOrder,
     updateOrderStatus,

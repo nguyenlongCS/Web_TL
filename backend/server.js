@@ -20,7 +20,7 @@ const app = express()
 
 // CORS configuration - CHO PHÉP FRONTEND GỌI API
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite default port
+  origin: 'http://localhost:5175', // Vite default port
   credentials: true
 }))
 

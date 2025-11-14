@@ -1,4 +1,5 @@
 // backend/models/Order.js
+// Model đơn hàng - thêm thông tin người duyệt
 import mongoose from 'mongoose'
 
 const orderSchema = new mongoose.Schema({
@@ -38,6 +39,20 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
+  },
+  // Thông tin người duyệt
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  approvedByName: {
+    type: String,
+    default: null
+  },
+  approvedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

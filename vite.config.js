@@ -1,6 +1,4 @@
 // vite.config.js
-// Cấu hình Vite
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -10,5 +8,8 @@ export default defineConfig({
     alias: {
       '@': '/frontend'
     }
+  },
+  server: {
+    port: 5175
   }
 })
