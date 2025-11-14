@@ -1,5 +1,5 @@
 <!-- frontend/views/ProductDetailView.vue -->
-<!-- Trang chi tiết sản phẩm -->
+<!-- Trang chi tiết sản phẩm - hiển thị ảnh xem trước và media bổ sung -->
 
 <template>
   <section class="page-section">
@@ -17,10 +17,43 @@
 
       <!-- Hiển thị chi tiết sản phẩm -->
       <div v-else-if="product" class="product-detail">
-        <div class="product-image">
-          <img :src="product.imgSrc" :alt="product.name">
+        <!-- Cột trái: Ảnh xem trước và Media bổ sung -->
+        <div class="product-left">
+          <div class="product-image">
+            <img :src="product.imgSrc" :alt="product.name">
+          </div>
+
+          <!-- Hiển thị media bổ sung nếu có -->
+          <div v-if="product.media && product.media.length > 0" class="product-media">
+            <h3>Hình ảnh/Video bổ sung</h3>
+            <div class="media-grid">
+              <div v-for="(item, index) in product.media" :key="index" class="media-item">
+                <!-- Hiển thị ảnh -->
+                <img 
+                  v-if="item.type === 'image'" 
+                  :src="item.url" 
+                  :alt="`Media ${index + 1}`"
+                  class="media-content"
+                  @click="openMediaModal(item)"
+                >
+                <!-- Hiển thị video -->
+                <video 
+                  v-else
+                  class="media-content video-player"
+                  controls
+                  preload="metadata"
+                >
+                  <source :src="item.url" type="video/mp4">
+                  <source :src="item.url" type="video/webm">
+                  <source :src="item.url" type="video/ogg">
+                  Trình duyệt không hỗ trợ video
+                </video>
+              </div>
+            </div>
+          </div>
         </div>
 
+        <!-- Cột phải: Thông tin sản phẩm -->
         <div class="product-info">
           <h2>{{ product.name }}</h2>
 
@@ -69,6 +102,19 @@
           </div>
         </div>
       </div>
+
+      <!-- Modal xem ảnh phòng to -->
+      <div v-if="showMediaModal" class="media-modal" @click="closeMediaModal">
+        <div class="modal-content" @click.stop>
+          <button class="btn-close-modal" @click="closeMediaModal">✕</button>
+          <img 
+            v-if="selectedMedia && selectedMedia.type === 'image'" 
+            :src="selectedMedia.url" 
+            alt="Full size"
+            class="modal-image"
+          >
+        </div>
+      </div>
     </div>
   </section>
 </template>
@@ -90,6 +136,10 @@ const { addToCart } = useCart()
 const product = ref(null)
 const loading = ref(false)
 const error = ref(null)
+
+// State cho modal xem ảnh
+const showMediaModal = ref(false)
+const selectedMedia = ref(null)
 
 // Lấy label của category
 const getCategoryLabel = (category) => {
@@ -124,6 +174,20 @@ const handleAddToCart = () => {
   router.push('/giohang')
 }
 
+// Mở modal xem ảnh phóng to
+const openMediaModal = (media) => {
+  if (media.type === 'image') {
+    selectedMedia.value = media
+    showMediaModal.value = true
+  }
+}
+
+// Đóng modal
+const closeMediaModal = () => {
+  showMediaModal.value = false
+  selectedMedia.value = null
+}
+
 // Load sản phẩm khi component mount
 onMounted(() => {
   loadProduct()
@@ -136,6 +200,12 @@ onMounted(() => {
   grid-template-columns: 1fr 1fr;
   gap: 50px;
   margin-top: 30px;
+}
+
+.product-left {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
 
 .product-image {
@@ -243,6 +313,59 @@ onMounted(() => {
   font-size: 1rem;
 }
 
+.product-media {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-media h3 {
+  color: #e63946;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.media-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #000;
+}
+
+.media-content {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  transition: transform 0.3s;
+  display: block;
+}
+
+img.media-content {
+  cursor: pointer;
+  background: #f8f9fa;
+}
+
+img.media-content:hover {
+  transform: scale(1.05);
+}
+
+video.media-content {
+  cursor: default;
+  pointer-events: auto;
+}
+
+video.media-content:hover {
+  transform: none;
+}
+
 .product-actions {
   display: flex;
   gap: 15px;
@@ -272,17 +395,64 @@ onMounted(() => {
   background: #4b5563;
 }
 
-/* .btn-add-cart {
+.btn-add-cart {
   background: #10b981;
   color: white;
 }
 
 .btn-add-cart:hover {
   background: #059669;
-} */
+}
 
 .btn-add-cart:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+}
+
+.media-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  cursor: pointer;
+}
+
+.modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  cursor: default;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.btn-close-modal {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-close-modal:hover {
+  background: #dc2626;
 }
 </style>

@@ -1,4 +1,5 @@
 // backend/models/Product.js
+// Model sản phẩm - thêm trường media để lưu ảnh/video bổ sung
 import mongoose from 'mongoose'
 
 const productSchema = new mongoose.Schema({
@@ -37,6 +38,18 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Thêm trường media để lưu danh sách ảnh/video bổ sung
+  media: [{
+    type: {
+      type: String,
+      enum: ['image', 'video'],
+      required: true
+    },
+    url: {
+      type: String,
+      required: true
+    }
+  }],
   description: {
     type: String,
     default: ''

@@ -1,5 +1,6 @@
 <!-- frontend/views/AddProductView.vue -->
 <!-- Trang thêm sản phẩm mới - chỉ dành cho employee và admin -->
+<!-- Thêm chức năng upload ảnh xem trước và nhiều ảnh/video bổ sung -->
 
 <template>
   <section class="page-section">
@@ -18,21 +19,61 @@
       <div v-else class="add-product-container">
         <form @submit.prevent="handleSubmit" class="product-form">
           
-          <!-- Chọn hình ảnh -->
+          <!-- 1. Ảnh xem trước sản phẩm (bắt buộc) -->
           <div class="form-group">
-            <label>Hình ảnh sản phẩm *</label>
+            <label>Ảnh xem trước sản phẩm *</label>
+            <p class="help-text">Ảnh đại diện hiển thị cho sản phẩm (bắt buộc)</p>
             <div class="image-upload">
               <input 
                 type="file" 
                 id="product-image"
                 accept="image/*"
-                @change="handleImageChange"
+                @change="handlePreviewImageChange"
                 required
               >
               <label for="product-image" class="image-label">
-                <span v-if="!imagePreview">📷 Chọn hình ảnh</span>
-                <img v-else :src="imagePreview" alt="Preview" class="image-preview">
+                <span v-if="!previewImage">📷 Chọn ảnh xem trước</span>
+                <img v-else :src="previewImage" alt="Preview" class="image-preview">
               </label>
+            </div>
+          </div>
+
+          <!-- 2. Hình ảnh/Video bổ sung (không bắt buộc) -->
+          <div class="form-group">
+            <label>Hình ảnh/Video bổ sung</label>
+            <p class="help-text">Thêm nhiều ảnh hoặc video để mô tả chi tiết sản phẩm</p>
+            
+            <!-- Input để chọn nhiều file -->
+            <div class="media-upload">
+              <input 
+                type="file" 
+                id="product-media"
+                accept="image/*,video/*"
+                multiple
+                @change="handleMediaChange"
+              >
+              <label for="product-media" class="media-label">
+                📁 Chọn ảnh/video (có thể chọn nhiều)
+              </label>
+            </div>
+
+            <!-- Hiển thị danh sách media đã chọn -->
+            <div v-if="mediaList.length > 0" class="media-list">
+              <div v-for="(item, index) in mediaList" :key="index" class="media-item">
+                <!-- Hiển thị ảnh -->
+                <img v-if="item.type === 'image'" :src="item.preview" alt="Media" class="media-thumbnail">
+                <!-- Hiển thị video -->
+                <video v-else :src="item.preview" class="media-thumbnail"></video>
+                
+                <div class="media-info">
+                  <span class="media-type">{{ item.type === 'image' ? '🖼️ Ảnh' : '🎥 Video' }}</span>
+                  <span class="media-name">{{ item.name }}</span>
+                </div>
+                
+                <button type="button" class="btn-remove-media" @click="removeMedia(index)">
+                  ✕
+                </button>
+              </div>
             </div>
           </div>
 
@@ -138,23 +179,71 @@ const formData = ref({
   imgSrc: ''
 })
 
-const imagePreview = ref(null)
+// State cho ảnh xem trước
+const previewImage = ref(null)
+
+// State cho danh sách media bổ sung
+const mediaList = ref([])
+
 const loading = ref(false)
 
-// Xử lý khi chọn hình ảnh
-const handleImageChange = (event) => {
+// Xử lý khi chọn ảnh xem trước
+const handlePreviewImageChange = (event) => {
   const file = event.target.files[0]
   if (file) {
+    // Kiểm tra file phải là ảnh
+    if (!file.type.startsWith('image/')) {
+      alert('⚠️ Vui lòng chọn file ảnh!')
+      event.target.value = ''
+      return
+    }
+
     // Tạo preview
     const reader = new FileReader()
     reader.onload = (e) => {
-      imagePreview.value = e.target.result
+      previewImage.value = e.target.result
     }
     reader.readAsDataURL(file)
     
     // Lưu đường dẫn tạm (trong thực tế cần upload lên server)
     formData.value.imgSrc = `/frontend/assets/img/${file.name}`
   }
+}
+
+// Xử lý khi chọn nhiều ảnh/video bổ sung
+const handleMediaChange = (event) => {
+  const files = Array.from(event.target.files)
+  
+  files.forEach(file => {
+    // Kiểm tra file là ảnh hoặc video
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+    
+    if (!isImage && !isVideo) {
+      alert(`⚠️ File "${file.name}" không phải ảnh hoặc video!`)
+      return
+    }
+
+    // Tạo preview và thêm vào danh sách
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      mediaList.value.push({
+        type: isImage ? 'image' : 'video',
+        name: file.name,
+        preview: e.target.result,
+        url: `/frontend/assets/img/${file.name}` // Đường dẫn tạm
+      })
+    }
+    reader.readAsDataURL(file)
+  })
+
+  // Reset input để có thể chọn lại cùng file
+  event.target.value = ''
+}
+
+// Xóa media khỏi danh sách
+const removeMedia = (index) => {
+  mediaList.value.splice(index, 1)
 }
 
 // Xử lý submit form
@@ -181,6 +270,12 @@ const handleSubmit = async () => {
     // Tạo priceText từ price
     const priceText = `${formData.value.price.toLocaleString()}đ/ngày`
 
+    // Chuẩn bị dữ liệu media để gửi lên server
+    const media = mediaList.value.map(item => ({
+      type: item.type,
+      url: item.url
+    }))
+
     // Gọi API thêm sản phẩm
     const { data } = await api.post('/products', {
       name: formData.value.name,
@@ -190,7 +285,8 @@ const handleSubmit = async () => {
       stock: formData.value.stock,
       description: formData.value.description,
       imgSrc: formData.value.imgSrc,
-      rating: 5.0 // Mặc định rating 5.0 cho sản phẩm mới
+      media: media, // Thêm danh sách media
+      rating: 5.0
     })
 
     if (data.success) {
@@ -230,6 +326,13 @@ const handleSubmit = async () => {
   color: #1D3557;
   font-weight: 500;
   font-size: 15px;
+}
+
+.help-text {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 10px;
+  font-style: italic;
 }
 
 .form-group input,
@@ -294,6 +397,91 @@ const handleSubmit = async () => {
   max-height: 300px;
   object-fit: contain;
   border-radius: 4px;
+}
+
+.media-upload {
+  margin-bottom: 15px;
+}
+
+.media-upload input[type="file"] {
+  display: none;
+}
+
+.media-label {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #10b981;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.media-label:hover {
+  background: #059669;
+}
+
+.media-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.media-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.media-thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.media-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.media-type {
+  font-size: 13px;
+  color: #e63946;
+  font-weight: 500;
+}
+
+.media-name {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.btn-remove-media {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-remove-media:hover {
+  background: #dc2626;
 }
 
 .form-actions {
