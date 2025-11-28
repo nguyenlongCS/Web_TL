@@ -1,5 +1,5 @@
 <!-- frontend/components/order/OrderItem.vue -->
-<!-- Component hiển thị một item trong đơn hàng -->
+<!-- Component hiển thị một item trong đơn hàng - hiển thị ngày bắt đầu và kết thúc -->
 
 <template>
   <div class="order-item">
@@ -8,6 +8,16 @@
       <h4>{{ item.name }}</h4>
       <p>{{ item.priceText }}</p>
       <p>Số lượng: {{ item.quantity }} | Số ngày: {{ item.days }}</p>
+      
+      <!-- Hiển thị ngày bắt đầu và kết thúc thuê nếu có -->
+      <div v-if="showRentalDate && item.rentalStartDate" class="rental-dates">
+        <p class="rental-start-date">
+          📅 Ngày bắt đầu: <strong>{{ formatDateTime(item.rentalStartDate) }}</strong>
+        </p>
+        <p v-if="item.rentalEndDate" class="rental-end-date">
+          ⏰ Ngày kết thúc: <strong>{{ formatDateTime(item.rentalEndDate) }}</strong>
+        </p>
+      </div>
     </div>
     <div class="order-item-total">
       {{ formatPrice(item.price * item.quantity * item.days) }}
@@ -16,10 +26,14 @@
 </template>
 
 <script setup>
-import { formatPrice } from '../../utils/formatters'
+import { formatPrice, formatDateTime } from '../../utils/formatters'
 
 defineProps({
-  item: Object
+  item: Object,
+  showRentalDate: {
+    type: Boolean,
+    default: false
+  }
 })
 </script>
 
@@ -56,6 +70,35 @@ defineProps({
   color: #6b7280;
   font-size: 0.9rem;
   margin: 3px 0;
+}
+
+.rental-dates {
+  margin-top: 8px;
+  padding: 10px;
+  background: #f0f9ff;
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+}
+
+.rental-dates p {
+  margin: 3px 0;
+  font-size: 0.88rem;
+}
+
+.rental-start-date {
+  color: #1e40af !important;
+}
+
+.rental-start-date strong {
+  color: #1e3a8a;
+}
+
+.rental-end-date {
+  color: #059669 !important;
+}
+
+.rental-end-date strong {
+  color: #047857;
 }
 
 .order-item-total {

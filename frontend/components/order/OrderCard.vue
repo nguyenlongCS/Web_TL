@@ -1,14 +1,17 @@
 <!-- frontend/components/order/OrderCard.vue -->
-<!-- Component hiển thị một đơn hàng - thêm nút duyệt đơn -->
+<!-- Component hiển thị một đơn hàng - hiển thị ngày kết thúc từng sản phẩm -->
 
 <template>
   <div class="order-card">
     <div class="order-header">
       <div class="order-info-left">
         <h3>Đơn hàng #{{ order.orderNumber }}</h3>
-        <p class="order-date">{{ order.createdAt }}</p>
+        <p class="order-date">Ngày đặt: {{ order.createdAt }}</p>
+        
+        <!-- Hiển thị thông tin khách hàng -->
         <p v-if="order.userId" class="order-customer">
           Khách hàng: <strong>{{ order.userName }}</strong>
+          <span class="user-id">#{{ order.userId._id || order.userId }}</span>
         </p>
       </div>
       <div class="order-status" :style="{ color: statusColor }">
@@ -19,7 +22,12 @@
     </div>
     
     <div class="order-items">
-      <OrderItem v-for="(item, index) in order.items" :key="index" :item="item" />
+      <OrderItem 
+        v-for="(item, index) in order.items" 
+        :key="index" 
+        :item="item"
+        :showRentalDate="true"
+      />
     </div>
     
     <div class="order-footer">
@@ -28,12 +36,23 @@
         <span style="color:#e63946">{{ formatPrice(order.totalAmount) }}</span>
       </div>
       
-      <!-- Hiển thị thông tin người duyệt nếu có -->
+      <!-- Hiển thị thông tin người duyệt -->
       <div v-if="order.approvedByName" class="order-approver">
         <p>
-          <strong>Người duyệt:</strong> {{ order.approvedByName }}
+          <strong>Người {{ order.status === 'approved' ? 'duyệt' : 'từ chối' }}:</strong> 
+          {{ order.approvedByName }}
+          <span class="user-id">#{{ order.approvedBy._id || order.approvedBy }}</span>
         </p>
-        <p class="approved-date">{{ formatDate(order.approvedAt) }}</p>
+        <p class="approved-date">
+          Ngày {{ order.status === 'approved' ? 'duyệt' : 'từ chối' }}: 
+          {{ formatDateTime(order.approvedAt) }}
+        </p>
+      </div>
+
+      <!-- Hiển thị lý do từ chối nếu đơn bị từ chối -->
+      <div v-if="order.status === 'rejected' && order.rejectionReason" class="rejection-reason">
+        <p><strong>Lý do từ chối:</strong></p>
+        <p class="reason-text">{{ order.rejectionReason }}</p>
       </div>
       
       <div class="order-actions">
@@ -68,7 +87,7 @@
 
 <script setup>
 import OrderItem from './OrderItem.vue'
-import { formatPrice, formatDate } from '../../utils/formatters'
+import { formatPrice, formatDateTime } from '../../utils/formatters'
 
 defineProps({
   order: Object,
@@ -115,7 +134,14 @@ defineEmits(['cancel', 'approve', 'reject'])
 .order-customer {
   color: #4b5563;
   font-size: 0.95rem;
-  margin-top: 5px;
+  margin-top: 8px;
+}
+
+.user-id {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-left: 5px;
+  font-family: monospace;
 }
 
 .status-badge {
@@ -161,6 +187,28 @@ defineEmits(['cancel', 'approve', 'reject'])
 .approved-date {
   font-size: 0.85rem;
   color: #6b7280;
+}
+
+.rejection-reason {
+  background: #fee;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border-left: 4px solid #ef4444;
+}
+
+.rejection-reason p {
+  margin: 5px 0;
+  color: #4b5563;
+}
+
+.rejection-reason strong {
+  color: #dc2626;
+}
+
+.reason-text {
+  font-style: italic;
+  line-height: 1.5;
 }
 
 .order-actions {

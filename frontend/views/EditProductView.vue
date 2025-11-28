@@ -41,9 +41,9 @@
             </div>
           </div>
 
-          <!-- 2. Hình ảnh/Video bổ sung (không bắt buộc) -->
+          <!-- 2. Hình ảnh/Video mô tả (không bắt buộc) -->
           <div class="form-group">
-            <label>Hình ảnh/Video bổ sung</label>
+            <label>Hình ảnh/Video mô tả</label>
             <p class="help-text">Thêm nhiều ảnh hoặc video để mô tả chi tiết sản phẩm</p>
             
             <!-- Input để chọn nhiều file -->

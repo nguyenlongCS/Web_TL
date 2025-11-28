@@ -1,5 +1,5 @@
 // backend/models/Order.js
-// Model đơn hàng - thêm thông tin người duyệt
+// Model đơn hàng - mỗi sản phẩm có ngày kết thúc riêng
 import mongoose from 'mongoose'
 
 const orderSchema = new mongoose.Schema({
@@ -28,7 +28,11 @@ const orderSchema = new mongoose.Schema({
     priceText: String,
     quantity: Number,
     days: Number,
-    imgSrc: String
+    imgSrc: String,
+    // Ngày bắt đầu thuê riêng cho từng sản phẩm
+    rentalStartDate: Date,
+    // Ngày kết thúc thuê riêng cho từng sản phẩm
+    rentalEndDate: Date
   }],
   totalAmount: {
     type: Number,
@@ -39,6 +43,11 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
+  },
+  // Ngày bắt đầu thuê chung cho cả đơn hàng
+  rentalStartDate: {
+    type: Date,
+    default: null
   },
   // Thông tin người duyệt
   approvedBy: {
@@ -52,6 +61,11 @@ const orderSchema = new mongoose.Schema({
   },
   approvedAt: {
     type: Date,
+    default: null
+  },
+  // Lý do từ chối
+  rejectionReason: {
+    type: String,
     default: null
   }
 }, {

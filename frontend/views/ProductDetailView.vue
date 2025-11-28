@@ -23,9 +23,9 @@
             <img :src="product.imgSrc" :alt="product.name">
           </div>
 
-          <!-- Hiển thị media bổ sung nếu có -->
+          <!-- Hiển thị media mô tả nếu có -->
           <div v-if="product.media && product.media.length > 0" class="product-media">
-            <h3>Hình ảnh/Video bổ sung</h3>
+            <h3>Hình ảnh/Video mô tả</h3>
             <div class="media-grid">
               <div v-for="(item, index) in product.media" :key="index" class="media-item">
                 <!-- Hiển thị ảnh -->

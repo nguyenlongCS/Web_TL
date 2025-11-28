@@ -1,6 +1,8 @@
 // frontend/composables/useAuth.js
+// Composable quản lý authentication - reload cart khi đổi user
 import { ref, computed } from 'vue'
 import api from '../utils/api'
+import { useCart } from './useCart'
 
 const currentUser = ref(null)
 const token = ref(localStorage.getItem('token') || null)
@@ -34,6 +36,11 @@ export function useAuth() {
         token.value = data.token
         localStorage.setItem('user', JSON.stringify(data.user))
         localStorage.setItem('token', data.token)
+        
+        // Reload giỏ hàng cho user mới
+        const { reloadCart } = useCart()
+        reloadCart()
+        
         loading.value = false
         return { success: true, message: data.message }
       }
@@ -57,6 +64,11 @@ export function useAuth() {
         token.value = data.token
         localStorage.setItem('user', JSON.stringify(data.user))
         localStorage.setItem('token', data.token)
+        
+        // Reload giỏ hàng cho user đã đăng nhập
+        const { reloadCart } = useCart()
+        reloadCart()
+        
         loading.value = false
         return { success: true, message: data.message }
       }
@@ -76,6 +88,11 @@ export function useAuth() {
     token.value = null
     localStorage.removeItem('user')
     localStorage.removeItem('token')
+    
+    // Reload giỏ hàng cho guest
+    const { reloadCart } = useCart()
+    reloadCart()
+    
     loading.value = false
   }
 

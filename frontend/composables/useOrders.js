@@ -1,6 +1,6 @@
 // frontend/composables/useOrders.js
-// Composable quản lý orders - thêm chức năng duyệt đơn
-import { ref, computed, onMounted } from 'vue'
+// Composable quản lý orders - cập nhật để xử lý ngày thuê và lý do từ chối
+import { ref, computed } from 'vue'
 import { ORDER_STATUS, ORDER_STATUS_TEXT, ORDER_STATUS_COLOR } from '../utils/constants'
 import api from '../utils/api'
 
@@ -49,7 +49,7 @@ export function useOrders() {
     }
   }
 
-  // Tạo đơn hàng mới
+  // Tạo đơn hàng mới - items đã có rentalStartDate riêng
   const createOrder = async (cartItems, totalAmount) => {
     loading.value = true
     error.value = null
@@ -105,13 +105,14 @@ export function useOrders() {
     }
   }
 
-  // Cập nhật trạng thái đơn hàng (Duyệt/Từ chối)
-  const updateOrderStatus = async (orderId, newStatus) => {
+  // Cập nhật trạng thái đơn hàng (Duyệt/Từ chối) - thêm tham số rejectionReason
+  const updateOrderStatus = async (orderId, newStatus, rejectionReason = null) => {
     loading.value = true
     error.value = null
     try {
       const { data } = await api.put(`/orders/${orderId}/status`, {
-        status: newStatus
+        status: newStatus,
+        rejectionReason: rejectionReason
       })
       
       if (data.success) {
@@ -123,6 +124,9 @@ export function useOrders() {
           order.approvedByName = data.order.approvedByName
           order.approvedAt = data.order.approvedAt
           order.updatedAt = data.order.updatedAt
+          if (newStatus === 'rejected') {
+            order.rejectionReason = data.order.rejectionReason
+          }
         }
         
         // Cập nhật trong orders nếu có
@@ -133,6 +137,9 @@ export function useOrders() {
           myOrder.approvedByName = data.order.approvedByName
           myOrder.approvedAt = data.order.approvedAt
           myOrder.updatedAt = data.order.updatedAt
+          if (newStatus === 'rejected') {
+            myOrder.rejectionReason = data.order.rejectionReason
+          }
         }
         
         return { success: true, message: data.message }
@@ -170,13 +177,8 @@ export function useOrders() {
   const getStatusText = (status) => ORDER_STATUS_TEXT[status] || 'Không xác định'
   const getStatusColor = (status) => ORDER_STATUS_COLOR[status] || '#6b7280'
 
-  // Load orders khi component mount (nếu user đã đăng nhập)
-  onMounted(() => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      fetchMyOrders()
-    }
-  })
+  // Không tự động load orders trong onMounted
+  // Orders sẽ được load bởi OrdersView khi cần
 
   return {
     orders,

@@ -1,5 +1,5 @@
 <!-- frontend/views/CartView.vue -->
-<!-- Trang giỏ hàng - gửi đơn hàng qua API -->
+<!-- Trang giỏ hàng - mỗi sản phẩm chọn ngày bắt đầu thuê riêng -->
 
 <template>
   <section class="page-section">
@@ -19,8 +19,10 @@
           @increase="increaseQuantity(index)"
           @decrease="decreaseQuantity(index)"
           @update-days="updateDays(index, $event)"
+          @update-rental-start="updateRentalStart(index, $event)"
           @remove="removeFromCart(index)"
         />
+
         <CartSummary 
           :total="cartTotal" 
           :loading="orderLoading"
@@ -41,7 +43,7 @@ import { useOrders } from '../composables/useOrders'
 import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
-const { cart, cartTotal, removeFromCart, increaseQuantity, decreaseQuantity, updateDays, clearCart } = useCart()
+const { cart, cartTotal, removeFromCart, increaseQuantity, decreaseQuantity, updateDays, updateRentalStart, clearCart } = useCart()
 const { createOrder } = useOrders()
 const { isLoggedIn } = useAuth()
 
@@ -56,9 +58,28 @@ const handleRent = async () => {
     return
   }
 
+  // Kiểm tra tất cả sản phẩm đã chọn ngày bắt đầu thuê chưa
+  const missingDate = cart.value.find(item => !item.rentalStartDate)
+  if (missingDate) {
+    alert(`⚠️ Vui lòng chọn ngày bắt đầu thuê cho sản phẩm "${missingDate.name}"!`)
+    return
+  }
+
+  // Kiểm tra tất cả ngày bắt đầu thuê phải từ hiện tại trở đi
+  const now = new Date()
+  const invalidDate = cart.value.find(item => {
+    const selectedDate = new Date(item.rentalStartDate)
+    return selectedDate < now
+  })
+  
+  if (invalidDate) {
+    alert(`⚠️ Ngày bắt đầu thuê cho sản phẩm "${invalidDate.name}" phải từ hiện tại trở đi!`)
+    return
+  }
+
   orderLoading.value = true
   
-  // Gọi API tạo đơn hàng
+  // Gọi API tạo đơn hàng với từng sản phẩm có ngày thuê riêng
   const result = await createOrder([...cart.value], cartTotal.value)
   
   orderLoading.value = false
