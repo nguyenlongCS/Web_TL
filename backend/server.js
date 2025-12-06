@@ -12,15 +12,16 @@ import orderRoutes from './routes/orders.js'
 import serviceRoutes from './routes/services.js'
 import projectRoutes from './routes/projects.js'
 import reviewRoutes from './routes/reviews.js'
+import calendarRoutes from './routes/calendar.js'
 
 dotenv.config({ path: './backend/.env' })
 connectDB()
 
 const app = express()
 
-// CORS configuration - CHO PHÉP FRONTEND GỌI API
+// CORS configuration
 app.use(cors({
-  origin: 'http://localhost:5175', // Vite default port
+  origin: 'http://localhost:5175',
   credentials: true
 }))
 
@@ -38,7 +39,8 @@ app.get('/', (req, res) => {
       orders: '/api/orders',
       services: '/api/services',
       projects: '/api/projects',
-      reviews: '/api/reviews'
+      reviews: '/api/reviews',
+      calendar: '/api/calendar'
     }
   })
 })
@@ -49,6 +51,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/services', serviceRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/reviews', reviewRoutes)
+app.use('/api/calendar', calendarRoutes)
 
 app.use(notFound)
 app.use(errorHandler)

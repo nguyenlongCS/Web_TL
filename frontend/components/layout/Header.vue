@@ -19,6 +19,7 @@
           </ul>
         </li>
         <li><router-link to="/duan">Dự án</router-link></li>
+        <li v-if="canManage"><router-link to="/lich">Lịch</router-link></li>
         <li><router-link to="/lienhe">Liên hệ</router-link></li>
       </ul>
       <div class="nav-right">
@@ -39,11 +40,20 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 
 const router = useRouter()
-const { isLoggedIn, userName, logout } = useAuth()
+const { isLoggedIn, userName, currentUser, logout } = useAuth()
+
+// ✅ THÊM: Computed kiểm tra quyền quản lý
+const canManage = computed(() => {
+  return currentUser.value && (
+    currentUser.value.role === 'admin' || 
+    currentUser.value.role === 'employee'
+  )
+})
 
 const handleLogout = () => {
   logout()

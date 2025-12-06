@@ -14,6 +14,7 @@ import ApproveOrdersView from '../views/ApproveOrdersView.vue'
 import AddProductView from '../views/AddProductView.vue'
 import EditProductView from '../views/EditProductView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
+import CalendarView from '../views/CalendarView.vue'
 
 const routes = [
   {
@@ -80,6 +81,11 @@ const routes = [
     path: '/sanpham/them',
     name: 'add-product',
     component: AddProductView
+  },
+  { 
+    path: '/lich', 
+    name: 'calendar', 
+    component: CalendarView 
   }
 ]
 

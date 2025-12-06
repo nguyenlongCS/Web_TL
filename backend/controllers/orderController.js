@@ -1,6 +1,6 @@
 // backend/controllers/orderController.js
-// Controller xử lý đơn hàng - mỗi sản phẩm có ngày bắt đầu và kết thúc riêng
 import Order from '../models/Order.js'
+import { updateCalendarOnNewOrder, removeOrderFromCalendar } from './calendarController.js'
 
 // @desc    Tạo đơn hàng mới
 // @route   POST /api/orders
@@ -59,6 +59,14 @@ export const createOrder = async (req, res) => {
       rentalStartDate: earliestStartDate,
       status: 'pending'
     })
+
+    res.status(201).json({
+      success: true,
+      message: 'Đặt hàng thành công',
+      order
+    })
+    // Cập nhật lịch tự động
+    await updateCalendarOnNewOrder(order._id, itemsWithEndDate)
 
     res.status(201).json({
       success: true,
@@ -165,6 +173,9 @@ export const cancelOrder = async (req, res) => {
 
       await Order.findByIdAndDelete(req.params.id)
 
+      // Xóa khỏi lịch
+      await removeOrderFromCalendar(req.params.id)
+
       res.json({
         success: true,
         message: 'Đã hủy đơn hàng thành công'
@@ -200,6 +211,8 @@ export const updateOrderStatus = async (req, res) => {
       // Lưu lý do từ chối nếu có
       if (status === 'rejected') {
         order.rejectionReason = rejectionReason
+        // Xóa/giải phóng khỏi lịch khi từ chối
+        await removeOrderFromCalendar(order._id)
       }
 
       const updatedOrder = await order.save()
