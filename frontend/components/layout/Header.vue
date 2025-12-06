@@ -23,9 +23,9 @@
         <li><router-link to="/lienhe">Liên hệ</router-link></li>
       </ul>
       <div class="nav-right">
-        <div class="search-bar">
+        <!-- <div class="search-bar">
           <input type="text" placeholder="Tìm kiếm...">
-        </div>
+        </div> -->
         
         <router-link v-if="!isLoggedIn" to="/dangnhap" class="login-btn">
           Đăng nhập

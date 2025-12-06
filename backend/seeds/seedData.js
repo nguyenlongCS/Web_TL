@@ -33,7 +33,7 @@ const users = [
     name: 'Admin',
     email: 'admin@thanhluan.com',
     password: '123456', // Plain password
-    phone: '0999999999',
+    phone: '0912070201',
     role: 'admin'
   },
   {
@@ -42,6 +42,13 @@ const users = [
     password: '123456', // Plain password
     phone: '0911111111',
     role: 'user'
+  },
+  {
+    name: 'Nguyễn Thành Long',
+    email: 'long@gmail.com',
+    password: '123456', // Plain password
+    phone: '0911322018',
+    role: 'employee'
   }
 ]
 
