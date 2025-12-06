@@ -1,5 +1,5 @@
 // frontend/router/index.js
-// Cấu hình routing cho ứng dụng - thêm route sửa sản phẩm
+// Cấu hình routing cho ứng dụng - thêm route /duyetdonhang
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
@@ -10,6 +10,7 @@ import ContactView from '../views/ContactView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import OrdersView from '../views/OrdersView.vue'
+import ApproveOrdersView from '../views/ApproveOrdersView.vue'
 import AddProductView from '../views/AddProductView.vue'
 import EditProductView from '../views/EditProductView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
@@ -54,6 +55,11 @@ const routes = [
     path: '/donhang',
     name: 'orders',
     component: OrdersView
+  },
+  {
+    path: '/duyetdonhang',
+    name: 'approve-orders',
+    component: ApproveOrdersView
   },
   {
     path: '/giohang',
