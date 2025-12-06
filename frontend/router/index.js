@@ -1,5 +1,5 @@
 // frontend/router/index.js
-// Cấu hình routing cho ứng dụng - thêm route /duyetdonhang
+// Cấu hình routing - cho phép tất cả user xem lịch
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
@@ -82,6 +82,7 @@ const routes = [
     name: 'add-product',
     component: AddProductView
   },
+  // Tất cả user đã đăng nhập có thể xem lịch
   { 
     path: '/lich', 
     name: 'calendar', 

@@ -1,5 +1,5 @@
 // frontend/composables/useCart.js
-// Composable quản lý giỏ hàng - mỗi user có giỏ hàng riêng
+// Composable quản lý giỏ hàng - thêm xử lý thời gian thuê
 import { ref, computed, watch } from 'vue'
 
 // Lấy user ID từ localStorage
@@ -66,6 +66,7 @@ export function useCart() {
     cart.value = loadCartFromStorage()
   }
 
+  // Thêm sản phẩm vào giỏ hàng
   const addToCart = (product) => {
     loading.value = true
     const existing = cart.value.find(p => p._id === product._id)
@@ -75,38 +76,50 @@ export function useCart() {
       cart.value.push({
         ...product,
         quantity: 1,
-        days: 1
+        days: 1,
+        rentalStartDate: '',
+        rentalStartTime: '07:00' // Mặc định 7:00 sáng
       })
     }
     loading.value = false
   }
 
+  // Xóa sản phẩm khỏi giỏ hàng
   const removeFromCart = (index) => {
     loading.value = true
     cart.value.splice(index, 1)
     loading.value = false
   }
 
+  // Tăng số lượng
   const increaseQuantity = (index) => {
     cart.value[index].quantity += 1
   }
 
+  // Giảm số lượng
   const decreaseQuantity = (index) => {
     if (cart.value[index].quantity > 1) {
       cart.value[index].quantity -= 1
     }
   }
 
+  // Cập nhật số ngày thuê
   const updateDays = (index, days) => {
     const newDays = Math.max(1, parseInt(days) || 1)
     cart.value[index].days = newDays
   }
 
-  // Cập nhật ngày bắt đầu thuê cho sản phẩm
+  // Cập nhật ngày bắt đầu thuê
   const updateRentalStart = (index, rentalStartDate) => {
     cart.value[index].rentalStartDate = rentalStartDate
   }
 
+  // Cập nhật giờ bắt đầu thuê
+  const updateRentalTime = (index, rentalStartTime) => {
+    cart.value[index].rentalStartTime = rentalStartTime
+  }
+
+  // Xóa toàn bộ giỏ hàng
   const clearCart = () => {
     loading.value = true
     cart.value = []
@@ -123,6 +136,7 @@ export function useCart() {
     decreaseQuantity,
     updateDays,
     updateRentalStart,
+    updateRentalTime,
     clearCart,
     reloadCart,
     loading

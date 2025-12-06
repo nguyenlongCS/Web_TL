@@ -1,11 +1,19 @@
 // backend/controllers/calendarController.js
-// Controller xử lý logic quản lý lịch
+// Controller xử lý logic quản lý lịch - làm việc với định dạng yyyy-mm-dd
 import Calendar from '../models/Calendar.js'
 import Order from '../models/Order.js'
 
+// Helper: Format date thành YYYY-MM-DD
+const formatDate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // @desc    Lấy trạng thái lịch theo tháng
 // @route   GET /api/calendar?year=2025&month=12
-// @access  Private/Admin/Employee
+// @access  Private (tất cả user đã đăng nhập)
 export const getCalendarByMonth = async (req, res) => {
   try {
     const { year, month } = req.query
@@ -19,7 +27,7 @@ export const getCalendarByMonth = async (req, res) => {
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0)
     
-    // Tạo danh sách ngày trong tháng
+    // Tạo danh sách ngày trong tháng (yyyy-mm-dd)
     const dates = []
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       dates.push(formatDate(new Date(d)))
@@ -118,14 +126,6 @@ export const unblockDate = async (req, res) => {
   }
 }
 
-// Helper: Format date thành YYYY-MM-DD
-const formatDate = (date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 // Hàm helper: Cập nhật trạng thái lịch khi có đơn hàng mới
 export const updateCalendarOnNewOrder = async (orderId, items) => {
   try {
@@ -137,8 +137,8 @@ export const updateCalendarOnNewOrder = async (orderId, items) => {
         const start = new Date(item.rentalStartDate)
         const end = new Date(item.rentalEndDate)
         
-        // Thêm tất cả ngày từ start đến end
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        // Thêm tất cả ngày từ start đến end (không bao gồm end)
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
           dates.add(formatDate(new Date(d)))
         }
       }

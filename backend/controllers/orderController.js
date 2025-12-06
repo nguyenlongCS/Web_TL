@@ -1,6 +1,60 @@
 // backend/controllers/orderController.js
+// Controller xử lý đơn hàng - kiểm tra lịch và xử lý ngày giờ đầy đủ
 import Order from '../models/Order.js'
+import Calendar from '../models/Calendar.js'
 import { updateCalendarOnNewOrder, removeOrderFromCalendar } from './calendarController.js'
+
+// Helper: Format date thành YYYY-MM-DD
+const formatDate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Helper: Lấy tất cả ngày từ đơn hàng
+const getAllDatesFromOrder = (items) => {
+  const dates = new Set()
+  
+  for (const item of items) {
+    if (item.rentalStartDate && item.days) {
+      // rentalStartDate là yyyy-mm-dd string
+      const startDate = new Date(item.rentalStartDate + 'T00:00:00')
+      const days = parseInt(item.days)
+      
+      // Thêm tất cả ngày từ start đến start + days - 1
+      for (let i = 0; i < days; i++) {
+        const currentDate = new Date(startDate)
+        currentDate.setDate(currentDate.getDate() + i)
+        dates.add(formatDate(currentDate))
+      }
+    }
+  }
+  
+  return Array.from(dates)
+}
+
+// Helper: Kiểm tra lịch có bận/kẹt không
+const checkCalendarAvailability = async (dates) => {
+  // Lấy trạng thái lịch cho các ngày cần kiểm tra
+  const calendars = await Calendar.find({
+    date: { $in: dates }
+  })
+  
+  // Tìm ngày bị blocked hoặc busy
+  const blockedDates = []
+  
+  for (const calendar of calendars) {
+    if (calendar.status === 'blocked' || calendar.status === 'busy') {
+      blockedDates.push(calendar.date)
+    }
+  }
+  
+  return {
+    available: blockedDates.length === 0,
+    blockedDates
+  }
+}
 
 // @desc    Tạo đơn hàng mới
 // @route   POST /api/orders
@@ -17,29 +71,55 @@ export const createOrder = async (req, res) => {
     // Validate mỗi sản phẩm phải có ngày bắt đầu thuê
     const missingDate = items.find(item => !item.rentalStartDate)
     if (missingDate) {
-      return res.status(400).json({ message: 'Vui lòng chọn ngày bắt đầu thuê cho tất cả sản phẩm' })
+      return res.status(400).json({ 
+        message: `Vui lòng chọn ngày bắt đầu thuê cho sản phẩm "${missingDate.name}"` 
+      })
     }
 
     const now = new Date()
+    now.setHours(0, 0, 0, 0)
 
     // Validate và tính ngày kết thúc cho từng sản phẩm
     const itemsWithEndDate = items.map(item => {
-      const startDate = new Date(item.rentalStartDate)
+      // rentalStartDate là yyyy-mm-dd, rentalStartTime là HH:mm
+      const dateStr = item.rentalStartDate
+      const timeStr = item.rentalStartTime || '07:00'
       
-      // Kiểm tra ngày bắt đầu phải từ hiện tại trở đi
+      // Tạo datetime đầy đủ
+      const startDateTime = new Date(dateStr + 'T' + timeStr + ':00')
+      
+      // Kiểm tra ngày bắt đầu phải từ hôm nay trở đi
+      const startDate = new Date(dateStr + 'T00:00:00')
       if (startDate < now) {
-        throw new Error(`Ngày bắt đầu thuê "${item.name}" phải từ hiện tại trở đi`)
+        throw new Error(`Ngày bắt đầu thuê "${item.name}" phải từ hôm nay trở đi`)
       }
       
       // Tính ngày kết thúc
-      const endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + item.days)
+      const endDateTime = new Date(startDateTime)
+      endDateTime.setDate(endDateTime.getDate() + parseInt(item.days))
       
       return {
         ...item,
-        rentalEndDate: endDate
+        rentalStartDate: startDateTime,
+        rentalEndDate: endDateTime
       }
     })
+
+    // Kiểm tra lịch trước khi tạo đơn
+    const orderDates = getAllDatesFromOrder(items)
+    const availability = await checkCalendarAvailability(orderDates)
+    
+    if (!availability.available) {
+      // Format ngày bị chặn theo dd/mm/yyyy
+      const formattedDates = availability.blockedDates.map(dateStr => {
+        const [year, month, day] = dateStr.split('-')
+        return `${day}/${month}/${year}`
+      })
+      
+      return res.status(400).json({ 
+        message: `Không thể đặt hàng vì các ngày sau đã bận hoặc bị kẹt lịch: ${formattedDates.join(', ')}`
+      })
+    }
 
     // Lấy ngày bắt đầu sớm nhất làm ngày bắt đầu của đơn hàng
     const earliestStartDate = new Date(
@@ -60,11 +140,6 @@ export const createOrder = async (req, res) => {
       status: 'pending'
     })
 
-    res.status(201).json({
-      success: true,
-      message: 'Đặt hàng thành công',
-      order
-    })
     // Cập nhật lịch tự động
     await updateCalendarOnNewOrder(order._id, itemsWithEndDate)
 

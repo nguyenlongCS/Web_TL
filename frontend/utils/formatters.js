@@ -1,5 +1,5 @@
 // frontend/utils/formatters.js
-// Các hàm format dữ liệu - thêm formatDateTime
+// Các hàm format dữ liệu cho hệ thống
 
 // Format rating thành ngôi sao
 export function formatStars(rating) {
@@ -16,22 +16,53 @@ export function formatPrice(price) {
   return price.toLocaleString() + 'đ'
 }
 
-// Format ngày giờ đầy đủ (giờ:phút:giây ngày/tháng/năm)
+// Format ngày giờ theo định dạng Việt Nam (dd/mm/yyyy sáng/chiều/tối)
 export function formatDateTime(date) {
   if (!date) return ''
   
   const d = new Date(date)
-  const hours = String(d.getHours()).padStart(2, '0')
+  const hours = d.getHours()
   const minutes = String(d.getMinutes()).padStart(2, '0')
-  const seconds = String(d.getSeconds()).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const year = d.getFullYear()
   
-  return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`
+  // Xác định buổi trong ngày
+  let period = ''
+  if (hours >= 5 && hours < 12) {
+    period = 'sáng'
+  } else if (hours >= 12 && hours < 18) {
+    period = 'chiều'
+  } else {
+    period = 'tối'
+  }
+  
+  // Format giờ 12h
+  const hours12 = hours % 12 || 12
+  
+  return `${hours12}:${minutes} ${period} ${day}/${month}/${year}`
 }
 
-// Format ngày (chỉ ngày/tháng/năm)
+// Format ngày đơn giản (chỉ dd/mm/yyyy)
 export function formatDate(date) {
-  return new Date(date).toLocaleString('vi-VN')
+  if (!date) return ''
+  
+  const d = new Date(date)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  
+  return `${day}/${month}/${year}`
+}
+
+// Format date cho input type="date" (yyyy-mm-dd)
+export function formatDateForInput(date) {
+  if (!date) return ''
+  
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
 }

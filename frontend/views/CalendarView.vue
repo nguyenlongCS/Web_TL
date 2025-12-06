@@ -1,21 +1,13 @@
 <!-- frontend/views/CalendarView.vue -->
-<!-- Trang quản lý lịch - chỉ dành cho admin và employee -->
+<!-- Trang quản lý lịch - Admin/Employee có thể chỉnh sửa, User chỉ xem -->
 
 <template>
   <section class="page-section">
     <div class="container">
-      <h2>Quản lý lịch</h2>
-
-      <!-- Kiểm tra quyền truy cập -->
-      <div v-if="!canAccess" style="text-align: center; padding: 50px;">
-        <p style="color: #ef4444; font-size: 1.2rem;">
-          ⚠️ Bạn không có quyền truy cập trang này
-        </p>
-        <router-link to="/" class="btn-back">Quay về trang chủ</router-link>
-      </div>
+      <h2>{{ canEdit ? 'Quản lý lịch' : 'Xem lịch' }}</h2>
 
       <!-- Hiển thị loading -->
-      <div v-else-if="loading" style="text-align: center; padding: 50px;">
+      <div v-if="loading" style="text-align: center; padding: 50px;">
         <p style="color: #e63946;">Đang tải lịch...</p>
       </div>
 
@@ -24,7 +16,15 @@
         <p style="color: #ef4444;">{{ error }}</p>
       </div>
 
-      <!-- Giao diện quản lý lịch -->
+      <!-- Hiển thị khi chưa đăng nhập -->
+      <div v-else-if="!isLoggedIn" style="text-align: center; padding: 50px;">
+        <p style="color: #6b7280;">⚠️ Vui lòng đăng nhập để xem lịch.</p>
+        <div style="margin-top: 20px;">
+          <router-link to="/dangnhap" class="btn-back">Đăng nhập</router-link>
+        </div>
+      </div>
+
+      <!-- Giao diện xem/quản lý lịch -->
       <div v-else class="calendar-container">
         <!-- Header điều khiển tháng/năm -->
         <div class="calendar-controls">
@@ -42,6 +42,11 @@
           <button class="btn-nav" @click="nextMonth">Tháng sau ▶</button>
         </div>
 
+        <!-- Thông báo nếu chỉ xem -->
+        <div v-if="!canEdit" class="info-banner">
+          ℹ️ Bạn đang xem lịch ở chế độ chỉ đọc. Chỉ quản lý viên mới có thể chỉnh sửa lịch.
+        </div>
+
         <!-- Grid lịch -->
         <CalendarGrid 
           :daysInMonth="calendarData"
@@ -51,10 +56,10 @@
         />
       </div>
 
-      <!-- Modal kẹt lịch -->
-      <div v-if="showBlockModal" class="modal-overlay" @click="closeBlockModal">
+      <!-- Modal chi tiết ngày (read-only cho user, có thể chỉnh sửa cho admin/employee) -->
+      <div v-if="showModal" class="modal-overlay" @click="closeModal">
         <div class="modal-content" @click.stop>
-          <h3>{{ selectedDay?.status === 'blocked' ? 'Mở lại lịch' : 'Kẹt lịch' }}</h3>
+          <h3>{{ canEdit ? 'Quản lý lịch' : 'Chi tiết ngày' }}</h3>
           
           <p class="modal-date">Ngày: {{ formatDate(selectedDay?.date) }}</p>
           
@@ -67,18 +72,8 @@
           </div>
 
           <!-- Nếu đang bận, hiển thị số đơn -->
-          <div v-if="selectedDay?.status === 'busy'" class="busy-warning">
-            ⚠️ Ngày này đang có {{ selectedDay.orderIds.length }} đơn hàng, không thể kẹt lịch
-          </div>
-
-          <!-- Nếu đang rảnh, cho phép kẹt lịch -->
-          <div v-if="selectedDay?.status === 'free'" class="block-form">
-            <label>Ghi chú (tùy chọn):</label>
-            <textarea 
-              v-model="blockNote"
-              placeholder="Nhập lý do kẹt lịch..."
-              rows="3"
-            ></textarea>
+          <div v-if="selectedDay?.status === 'busy'" class="busy-info">
+            📦 Ngày này đang có {{ selectedDay.orderIds.length }} đơn hàng
           </div>
 
           <!-- Nếu đang blocked, hiển thị ghi chú -->
@@ -87,13 +82,29 @@
             <p>{{ selectedDay.note }}</p>
           </div>
 
+          <!-- Form kẹt lịch (chỉ admin/employee và ngày rảnh) -->
+          <div v-if="canEdit && selectedDay?.status === 'free'" class="block-form">
+            <label>Ghi chú (tùy chọn):</label>
+            <textarea 
+              v-model="blockNote"
+              placeholder="Nhập lý do kẹt lịch..."
+              rows="3"
+            ></textarea>
+          </div>
+
+          <!-- Warning nếu cố kẹt lịch ngày bận -->
+          <div v-if="canEdit && selectedDay?.status === 'busy'" class="busy-warning">
+            ⚠️ Ngày này đang có {{ selectedDay.orderIds.length }} đơn hàng, không thể kẹt lịch
+          </div>
+
           <div class="modal-actions">
-            <button class="btn-modal-cancel" @click="closeBlockModal">
+            <button class="btn-modal-cancel" @click="closeModal">
               Đóng
             </button>
             
+            <!-- Nút hành động chỉ cho admin/employee -->
             <button 
-              v-if="selectedDay?.status === 'free'"
+              v-if="canEdit && selectedDay?.status === 'free'"
               class="btn-modal-confirm block"
               @click="confirmBlock"
             >
@@ -101,7 +112,7 @@
             </button>
             
             <button 
-              v-if="selectedDay?.status === 'blocked'"
+              v-if="canEdit && selectedDay?.status === 'blocked'"
               class="btn-modal-confirm unblock"
               @click="confirmUnblock"
             >
@@ -119,12 +130,13 @@ import { ref, computed, onMounted } from 'vue'
 import CalendarGrid from '../components/calendar/CalendarGrid.vue'
 import { useCalendar } from '../composables/useCalendar'
 import { useAuth } from '../composables/useAuth'
+import { formatDate } from '../utils/formatters'
 
-const { currentUser } = useAuth()
+const { isLoggedIn, currentUser } = useAuth()
 const { calendarData, loading, error, fetchCalendar, blockDate, unblockDate } = useCalendar()
 
-// Kiểm tra quyền truy cập (chỉ admin và employee)
-const canAccess = computed(() => {
+// Kiểm tra quyền chỉnh sửa (chỉ admin và employee)
+const canEdit = computed(() => {
   return currentUser.value && (
     currentUser.value.role === 'admin' || 
     currentUser.value.role === 'employee'
@@ -143,7 +155,7 @@ const yearOptions = computed(() => {
 })
 
 // State cho modal
-const showBlockModal = ref(false)
+const showModal = ref(false)
 const selectedDay = ref(null)
 const blockNote = ref('')
 
@@ -178,48 +190,38 @@ const nextMonth = () => {
 const handleDateClick = (day) => {
   selectedDay.value = day
   blockNote.value = day.note || ''
-  showBlockModal.value = true
+  showModal.value = true
 }
 
 // Đóng modal
-const closeBlockModal = () => {
-  showBlockModal.value = false
+const closeModal = () => {
+  showModal.value = false
   selectedDay.value = null
   blockNote.value = ''
 }
 
-// Xác nhận kẹt lịch
+// Xác nhận kẹt lịch (chỉ admin/employee)
 const confirmBlock = async () => {
   const result = await blockDate(selectedDay.value.date, blockNote.value)
   
   if (result.success) {
     alert('✅ ' + result.message)
-    closeBlockModal()
+    closeModal()
   } else {
     alert('❌ ' + result.message)
   }
 }
 
-// Xác nhận mở lại lịch
+// Xác nhận mở lại lịch (chỉ admin/employee)
 const confirmUnblock = async () => {
   const result = await unblockDate(selectedDay.value.date)
   
   if (result.success) {
     alert('✅ ' + result.message)
-    closeBlockModal()
+    closeModal()
   } else {
     alert('❌ ' + result.message)
   }
-}
-
-// Format ngày hiển thị
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
-  return `${day}/${month}/${year}`
 }
 
 // Lấy text trạng thái
@@ -232,9 +234,9 @@ const getStatusText = (status) => {
   return statusMap[status] || status
 }
 
-// Load lịch khi component mount
+// Load lịch khi component mount (nếu đã đăng nhập)
 onMounted(() => {
-  if (canAccess.value) {
+  if (isLoggedIn.value) {
     loadCalendar()
   }
 })
@@ -291,9 +293,18 @@ onMounted(() => {
   border-color: #e63946;
 }
 
+.info-banner {
+  padding: 15px;
+  background: #e0f2fe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  color: #1e40af;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
 .btn-back {
   display: inline-block;
-  margin-top: 20px;
   padding: 10px 20px;
   background: #e63946;
   color: white;
@@ -370,6 +381,15 @@ onMounted(() => {
 .status-badge.blocked {
   background: #fef3c7;
   color: #92400e;
+}
+
+.busy-info {
+  padding: 15px;
+  background: #e0f2fe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  color: #1e40af;
+  margin-bottom: 15px;
 }
 
 .busy-warning {

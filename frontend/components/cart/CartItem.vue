@@ -1,5 +1,5 @@
 <!-- frontend/components/cart/CartItem.vue -->
-<!-- Component item giỏ hàng - thêm input chọn ngày bắt đầu thuê cho từng sản phẩm -->
+<!-- Component item giỏ hàng - chọn ngày và giờ bắt đầu thuê (mặc định 7:00 sáng) -->
 
 <template>
   <div class="cart-item">
@@ -27,24 +27,40 @@
         <button class="btn-remove" @click="$emit('remove')">Xóa</button>
       </div>
       
-      <!-- Input chọn ngày giờ bắt đầu thuê cho sản phẩm này -->
+      <!-- Input chọn ngày và giờ bắt đầu thuê -->
       <div class="rental-date-control">
         <label :for="'rental-start-' + index">📅 Ngày bắt đầu thuê:</label>
-        <input 
-          type="datetime-local" 
-          :id="'rental-start-' + index"
-          class="rental-date-input"
-          :value="item.rentalStartDate || ''"
-          :min="minDateTime"
-          @input="$emit('update-rental-start', $event.target.value)"
-          required
-        >
+        <div class="datetime-inputs">
+          <input 
+            type="date" 
+            :id="'rental-start-' + index"
+            class="rental-date-input"
+            :value="item.rentalStartDate || ''"
+            :min="minDate"
+            @input="handleDateChange"
+            required
+          >
+          <input 
+            type="time" 
+            :id="'rental-time-' + index"
+            class="rental-time-input"
+            :value="item.rentalStartTime || '07:00'"
+            @input="handleTimeChange"
+            required
+          >
+        </div>
       </div>
       
-      <!-- Hiển thị ngày kết thúc dự kiến -->
-      <div v-if="item.rentalStartDate && item.days" class="rental-end-preview">
-        <span class="preview-label">⏰ Ngày kết thúc dự kiến:</span>
-        <span class="preview-date">{{ calculateEndDate(item.rentalStartDate, item.days) }}</span>
+      <!-- Hiển thị ngày giờ bắt đầu và kết thúc dự kiến theo định dạng yêu cầu -->
+      <div v-if="item.rentalStartDate && item.days" class="rental-preview">
+        <div class="preview-item">
+          <span class="preview-label">🕐 Ngày bắt đầu thuê:</span>
+          <span class="preview-value">{{ formatFullDateTime(item.rentalStartDate, item.rentalStartTime || '07:00') }}</span>
+        </div>
+        <div class="preview-item">
+          <span class="preview-label">⏰ Ngày kết thúc dự kiến:</span>
+          <span class="preview-value">{{ calculateEndDateTime(item.rentalStartDate, item.rentalStartTime || '07:00', item.days) }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -52,35 +68,88 @@
 
 <script setup>
 import { computed } from 'vue'
-import { formatDateTime } from '../../utils/formatters'
+import { formatDateForInput } from '../../utils/formatters'
 
-defineProps({
+const props = defineProps({
   item: Object,
   index: Number
 })
 
-defineEmits(['increase', 'decrease', 'update-days', 'update-rental-start', 'remove'])
+const emit = defineEmits(['increase', 'decrease', 'update-days', 'update-rental-start', 'update-rental-time', 'remove'])
 
-// Tính ngày giờ tối thiểu (hiện tại)
-const minDateTime = computed(() => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
+// Ngày tối thiểu là ngày hôm nay
+const minDate = computed(() => {
+  return formatDateForInput(new Date())
 })
 
-// Tính ngày kết thúc dự kiến
-const calculateEndDate = (startDate, days) => {
-  if (!startDate || !days) return ''
+// Xử lý khi thay đổi ngày
+const handleDateChange = (event) => {
+  emit('update-rental-start', event.target.value)
+}
+
+// Xử lý khi thay đổi giờ
+const handleTimeChange = (event) => {
+  emit('update-rental-time', event.target.value)
+}
+
+// Format ngày giờ đầy đủ: "ngày 30 tháng 12 năm 2025 - 13:00 Chiều"
+const formatFullDateTime = (dateStr, timeStr) => {
+  if (!dateStr || !timeStr) return ''
   
-  const start = new Date(startDate)
-  const end = new Date(start)
-  end.setDate(end.getDate() + parseInt(days))
+  // Parse date (yyyy-mm-dd)
+  const [year, month, day] = dateStr.split('-')
   
-  return formatDateTime(end)
+  // Parse time (HH:mm)
+  const [hours, minutes] = timeStr.split(':')
+  const hour = parseInt(hours)
+  
+  // Xác định buổi trong ngày
+  let period = ''
+  if (hour >= 5 && hour < 11) {
+    period = 'Sáng'
+  } else if (hour >= 11 && hour < 13) {
+    period = 'Trưa'
+  } else if (hour >= 13 && hour < 18) {
+    period = 'Chiều'
+  } else {
+    period = 'Tối'
+  }
+  
+  return `ngày ${parseInt(day)} tháng ${parseInt(month)} năm ${year} - ${hours}:${minutes} ${period}`
+}
+
+// Tính ngày giờ kết thúc dự kiến
+const calculateEndDateTime = (dateStr, timeStr, days) => {
+  if (!dateStr || !timeStr || !days) return ''
+  
+  // Tạo datetime từ date và time
+  const startDateTime = new Date(dateStr + 'T' + timeStr + ':00')
+  
+  // Cộng thêm số ngày
+  const endDateTime = new Date(startDateTime)
+  endDateTime.setDate(endDateTime.getDate() + parseInt(days))
+  
+  // Format lại
+  const year = endDateTime.getFullYear()
+  const month = endDateTime.getMonth() + 1
+  const day = endDateTime.getDate()
+  const hours = String(endDateTime.getHours()).padStart(2, '0')
+  const minutes = String(endDateTime.getMinutes()).padStart(2, '0')
+  const hour = endDateTime.getHours()
+  
+  // Xác định buổi trong ngày
+  let period = ''
+  if (hour >= 5 && hour < 11) {
+    period = 'Sáng'
+  } else if (hour >= 11 && hour < 13) {
+    period = 'Trưa'
+  } else if (hour >= 13 && hour < 18) {
+    period = 'Chiều'
+  } else {
+    period = 'Tối'
+  }
+  
+  return `ngày ${day} tháng ${month} năm ${year} - ${hours}:${minutes} ${period}`
 }
 </script>
 
@@ -195,7 +264,13 @@ const calculateEndDate = (startDate, days) => {
   font-size: 0.95rem;
 }
 
-.rental-date-input {
+.datetime-inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.rental-date-input,
+.rental-time-input {
   padding: 8px 10px;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
@@ -204,30 +279,45 @@ const calculateEndDate = (startDate, days) => {
   background: white;
 }
 
-.rental-date-input:focus {
+.rental-date-input {
+  flex: 2;
+}
+
+.rental-time-input {
+  flex: 1;
+}
+
+.rental-date-input:focus,
+.rental-time-input:focus {
   outline: none;
   border-color: #3b82f6;
 }
 
-.rental-end-preview {
+.rental-preview {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
   background: #e8f5e9;
   border-radius: 6px;
   border-left: 3px solid #10b981;
 }
 
+.preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .preview-label {
   color: #059669;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
-.preview-date {
+.preview-value {
   color: #047857;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 </style>

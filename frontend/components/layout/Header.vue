@@ -1,3 +1,6 @@
+<!-- frontend/components/layout/Header.vue -->
+<!-- Component header - menu Lịch hiển thị cho tất cả user đã đăng nhập -->
+
 <template>
   <nav class="navbar">
     <div v-if="isLoggedIn" class="user-info-left">
@@ -19,14 +22,11 @@
           </ul>
         </li>
         <li><router-link to="/duan">Dự án</router-link></li>
-        <li v-if="canManage"><router-link to="/lich">Lịch</router-link></li>
+        <!-- Menu Lịch hiển thị cho tất cả user đã đăng nhập -->
+        <li v-if="isLoggedIn"><router-link to="/lich">Lịch</router-link></li>
         <li><router-link to="/lienhe">Liên hệ</router-link></li>
       </ul>
       <div class="nav-right">
-        <!-- <div class="search-bar">
-          <input type="text" placeholder="Tìm kiếm...">
-        </div> -->
-        
         <router-link v-if="!isLoggedIn" to="/dangnhap" class="login-btn">
           Đăng nhập
         </router-link>
@@ -40,21 +40,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 
 const router = useRouter()
-const { isLoggedIn, userName, currentUser, logout } = useAuth()
+const { isLoggedIn, userName, logout } = useAuth()
 
-// ✅ THÊM: Computed kiểm tra quyền quản lý
-const canManage = computed(() => {
-  return currentUser.value && (
-    currentUser.value.role === 'admin' || 
-    currentUser.value.role === 'employee'
-  )
-})
-
+// Xử lý đăng xuất
 const handleLogout = () => {
   logout()
   alert('Đã đăng xuất thành công')

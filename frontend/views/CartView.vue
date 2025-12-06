@@ -1,5 +1,5 @@
 <!-- frontend/views/CartView.vue -->
-<!-- Trang giỏ hàng - mỗi sản phẩm chọn ngày bắt đầu thuê riêng -->
+<!-- Trang giỏ hàng - xử lý ngày và giờ bắt đầu thuê -->
 
 <template>
   <section class="page-section">
@@ -20,6 +20,7 @@
           @decrease="decreaseQuantity(index)"
           @update-days="updateDays(index, $event)"
           @update-rental-start="updateRentalStart(index, $event)"
+          @update-rental-time="updateRentalTime(index, $event)"
           @remove="removeFromCart(index)"
         />
 
@@ -43,7 +44,18 @@ import { useOrders } from '../composables/useOrders'
 import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
-const { cart, cartTotal, removeFromCart, increaseQuantity, decreaseQuantity, updateDays, updateRentalStart, clearCart } = useCart()
+const { 
+  cart, 
+  cartTotal, 
+  removeFromCart, 
+  increaseQuantity, 
+  decreaseQuantity, 
+  updateDays, 
+  updateRentalStart,
+  updateRentalTime,
+  clearCart 
+} = useCart()
+
 const { createOrder } = useOrders()
 const { isLoggedIn } = useAuth()
 
@@ -65,21 +77,23 @@ const handleRent = async () => {
     return
   }
 
-  // Kiểm tra tất cả ngày bắt đầu thuê phải từ hiện tại trở đi
-  const now = new Date()
+  // Kiểm tra tất cả ngày bắt đầu thuê phải từ hôm nay trở đi
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
   const invalidDate = cart.value.find(item => {
-    const selectedDate = new Date(item.rentalStartDate)
-    return selectedDate < now
+    const selectedDate = new Date(item.rentalStartDate + 'T00:00:00')
+    return selectedDate < today
   })
   
   if (invalidDate) {
-    alert(`⚠️ Ngày bắt đầu thuê cho sản phẩm "${invalidDate.name}" phải từ hiện tại trở đi!`)
+    alert(`⚠️ Ngày bắt đầu thuê cho sản phẩm "${invalidDate.name}" phải từ hôm nay trở đi!`)
     return
   }
 
   orderLoading.value = true
   
-  // Gọi API tạo đơn hàng với từng sản phẩm có ngày thuê riêng
+  // Gọi API tạo đơn hàng với ngày và giờ thuê
   const result = await createOrder([...cart.value], cartTotal.value)
   
   orderLoading.value = false
