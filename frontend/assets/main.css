@@ -601,3 +601,13 @@ footer .container {
 .btn-rent:hover {
     background-color: #457b9d;
 }
+
+.info-banner {
+  padding: 15px;
+  background: #e0f2fe;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  color: #1e40af;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}

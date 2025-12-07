@@ -1,22 +1,22 @@
 // backend/routes/calendar.js
-// Routes cho quản lý lịch - user có thể xem, admin/employee có thể chỉnh sửa
+// Routes cho quản lý lịch theo thời gian cụ thể
 import express from 'express'
 import {
   getCalendarByMonth,
   blockDate,
-  unblockDate
+  unblockTimeSlot
 } from '../controllers/calendarController.js'
 import { protect, employeeOrAdmin } from '../middleware/auth.js'
 
 const router = express.Router()
 
-// Lấy lịch theo tháng - tất cả user đã đăng nhập có thể xem
+// Lấy lịch theo tháng - tất cả user đã đăng nhập
 router.get('/', protect, getCalendarByMonth)
 
-// Kẹt lịch một ngày - chỉ admin/employee
+// Kẹt lịch một khoảng thời gian - chỉ admin/employee
 router.put('/block', protect, employeeOrAdmin, blockDate)
 
-// Mở lại ngày bị kẹt - chỉ admin/employee
-router.put('/unblock', protect, employeeOrAdmin, unblockDate)
+// Xóa một time slot kẹt lịch - chỉ admin/employee
+router.put('/unblock', protect, employeeOrAdmin, unblockTimeSlot)
 
 export default router

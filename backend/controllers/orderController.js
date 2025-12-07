@@ -1,60 +1,7 @@
 // backend/controllers/orderController.js
-// Controller xử lý đơn hàng - kiểm tra lịch và xử lý ngày giờ đầy đủ
+// Controller xử lý đơn hàng - kiểm tra lịch theo giờ cụ thể
 import Order from '../models/Order.js'
-import Calendar from '../models/Calendar.js'
-import { updateCalendarOnNewOrder, removeOrderFromCalendar } from './calendarController.js'
-
-// Helper: Format date thành YYYY-MM-DD
-const formatDate = (date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// Helper: Lấy tất cả ngày từ đơn hàng
-const getAllDatesFromOrder = (items) => {
-  const dates = new Set()
-  
-  for (const item of items) {
-    if (item.rentalStartDate && item.days) {
-      // rentalStartDate là yyyy-mm-dd string
-      const startDate = new Date(item.rentalStartDate + 'T00:00:00')
-      const days = parseInt(item.days)
-      
-      // Thêm tất cả ngày từ start đến start + days - 1
-      for (let i = 0; i < days; i++) {
-        const currentDate = new Date(startDate)
-        currentDate.setDate(currentDate.getDate() + i)
-        dates.add(formatDate(currentDate))
-      }
-    }
-  }
-  
-  return Array.from(dates)
-}
-
-// Helper: Kiểm tra lịch có bận/kẹt không
-const checkCalendarAvailability = async (dates) => {
-  // Lấy trạng thái lịch cho các ngày cần kiểm tra
-  const calendars = await Calendar.find({
-    date: { $in: dates }
-  })
-  
-  // Tìm ngày bị blocked hoặc busy
-  const blockedDates = []
-  
-  for (const calendar of calendars) {
-    if (calendar.status === 'blocked' || calendar.status === 'busy') {
-      blockedDates.push(calendar.date)
-    }
-  }
-  
-  return {
-    available: blockedDates.length === 0,
-    blockedDates
-  }
-}
+import { updateCalendarOnNewOrder, removeOrderFromCalendar, checkCalendarAvailability } from './calendarController.js'
 
 // @desc    Tạo đơn hàng mới
 // @route   POST /api/orders
@@ -77,21 +24,18 @@ export const createOrder = async (req, res) => {
     }
 
     const now = new Date()
-    now.setHours(0, 0, 0, 0)
 
     // Validate và tính ngày kết thúc cho từng sản phẩm
     const itemsWithEndDate = items.map(item => {
-      // rentalStartDate là yyyy-mm-dd, rentalStartTime là HH:mm
       const dateStr = item.rentalStartDate
       const timeStr = item.rentalStartTime || '07:00'
       
       // Tạo datetime đầy đủ
       const startDateTime = new Date(dateStr + 'T' + timeStr + ':00')
       
-      // Kiểm tra ngày bắt đầu phải từ hôm nay trở đi
-      const startDate = new Date(dateStr + 'T00:00:00')
-      if (startDate < now) {
-        throw new Error(`Ngày bắt đầu thuê "${item.name}" phải từ hôm nay trở đi`)
+      // Kiểm tra ngày bắt đầu phải từ hiện tại trở đi
+      if (startDateTime < now) {
+        throw new Error(`Ngày bắt đầu thuê "${item.name}" phải từ hiện tại trở đi`)
       }
       
       // Tính ngày kết thúc
@@ -105,23 +49,22 @@ export const createOrder = async (req, res) => {
       }
     })
 
-    // Kiểm tra lịch trước khi tạo đơn
-    const orderDates = getAllDatesFromOrder(items)
-    const availability = await checkCalendarAvailability(orderDates)
+    // Kiểm tra lịch có trùng không
+    const availability = await checkCalendarAvailability(now, itemsWithEndDate)
     
     if (!availability.available) {
-      // Format ngày bị chặn theo dd/mm/yyyy
-      const formattedDates = availability.blockedDates.map(dateStr => {
-        const [year, month, day] = dateStr.split('-')
-        return `${day}/${month}/${year}`
+      // Format thông báo lỗi chi tiết
+      const conflictMessages = availability.conflicts.map(conflict => {
+        const typeText = conflict.type === 'busy' ? 'đã có đơn hàng' : 'bị kẹt lịch'
+        return `${conflict.date} từ ${conflict.startTime} đến ${conflict.endTime} (${typeText})`
       })
       
       return res.status(400).json({ 
-        message: `Không thể đặt hàng vì các ngày sau đã bận hoặc bị kẹt lịch: ${formattedDates.join(', ')}`
+        message: `Không thể đặt hàng vì các khoảng thời gian sau đã bận:\n${conflictMessages.join('\n')}`
       })
     }
 
-    // Lấy ngày bắt đầu sớm nhất làm ngày bắt đầu của đơn hàng
+    // Lấy ngày bắt đầu sớm nhất
     const earliestStartDate = new Date(
       Math.min(...itemsWithEndDate.map(item => new Date(item.rentalStartDate)))
     )
@@ -140,7 +83,7 @@ export const createOrder = async (req, res) => {
       status: 'pending'
     })
 
-    // Cập nhật lịch tự động
+    // Cập nhật lịch
     await updateCalendarOnNewOrder(order._id, itemsWithEndDate)
 
     res.status(201).json({
@@ -202,7 +145,6 @@ export const getOrderById = async (req, res) => {
       .populate('approvedBy', 'name')
 
     if (order) {
-      // Kiểm tra quyền
       if (
         order.userId && 
         order.userId.toString() !== req.user._id.toString() && 
@@ -232,7 +174,6 @@ export const cancelOrder = async (req, res) => {
     const order = await Order.findById(req.params.id)
 
     if (order) {
-      // Kiểm tra quyền
       if (
         order.userId && 
         order.userId.toString() !== req.user._id.toString() && 
@@ -241,14 +182,11 @@ export const cancelOrder = async (req, res) => {
         return res.status(403).json({ message: 'Không có quyền hủy đơn hàng này' })
       }
 
-      // Chỉ cho phép hủy đơn pending
       if (order.status !== 'pending') {
         return res.status(400).json({ message: 'Không thể hủy đơn hàng đã được xử lý' })
       }
 
       await Order.findByIdAndDelete(req.params.id)
-
-      // Xóa khỏi lịch
       await removeOrderFromCalendar(req.params.id)
 
       res.json({
@@ -263,7 +201,7 @@ export const cancelOrder = async (req, res) => {
   }
 }
 
-// @desc    Cập nhật trạng thái đơn hàng (Duyệt/Từ chối)
+// @desc    Cập nhật trạng thái đơn hàng
 // @route   PUT /api/orders/:id/status
 // @access  Private/Admin/Employee
 export const updateOrderStatus = async (req, res) => {
@@ -272,27 +210,21 @@ export const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id)
 
     if (order) {
-      // Validate lý do từ chối nếu từ chối đơn
       if (status === 'rejected' && (!rejectionReason || rejectionReason.trim() === '')) {
         return res.status(400).json({ message: 'Vui lòng nhập lý do từ chối' })
       }
 
-      // Cập nhật trạng thái
       order.status = status
       order.approvedBy = req.user._id
       order.approvedByName = req.user.name
       order.approvedAt = new Date()
 
-      // Lưu lý do từ chối nếu có
       if (status === 'rejected') {
         order.rejectionReason = rejectionReason
-        // Xóa/giải phóng khỏi lịch khi từ chối
         await removeOrderFromCalendar(order._id)
       }
 
       const updatedOrder = await order.save()
-
-      // Populate thông tin người duyệt
       await updatedOrder.populate('approvedBy', 'name')
       await updatedOrder.populate('userId', 'name')
 

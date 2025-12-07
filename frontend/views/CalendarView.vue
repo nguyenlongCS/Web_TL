@@ -1,22 +1,19 @@
 <!-- frontend/views/CalendarView.vue -->
-<!-- Trang quản lý lịch - Admin/Employee có thể chỉnh sửa, User chỉ xem -->
+<!-- Trang quản lý lịch theo giờ - hiển thị chi tiết từng khoảng thời gian -->
 
 <template>
   <section class="page-section">
     <div class="container">
       <h2>{{ canEdit ? 'Quản lý lịch' : 'Xem lịch' }}</h2>
 
-      <!-- Hiển thị loading -->
       <div v-if="loading" style="text-align: center; padding: 50px;">
         <p style="color: #e63946;">Đang tải lịch...</p>
       </div>
 
-      <!-- Hiển thị lỗi -->
       <div v-else-if="error" style="text-align: center; padding: 50px;">
         <p style="color: #ef4444;">{{ error }}</p>
       </div>
 
-      <!-- Hiển thị khi chưa đăng nhập -->
       <div v-else-if="!isLoggedIn" style="text-align: center; padding: 50px;">
         <p style="color: #6b7280;">⚠️ Vui lòng đăng nhập để xem lịch.</p>
         <div style="margin-top: 20px;">
@@ -24,7 +21,6 @@
         </div>
       </div>
 
-      <!-- Giao diện xem/quản lý lịch -->
       <div v-else class="calendar-container">
         <!-- Header điều khiển tháng/năm -->
         <div class="calendar-controls">
@@ -42,9 +38,8 @@
           <button class="btn-nav" @click="nextMonth">Tháng sau ▶</button>
         </div>
 
-        <!-- Thông báo nếu chỉ xem -->
         <div v-if="!canEdit" class="info-banner">
-          ℹ️ Bạn đang xem lịch ở chế độ chỉ đọc. Chỉ quản lý viên mới có thể chỉnh sửa lịch.
+          ℹ️ Bạn đang xem lịch ở chế độ chỉ đọc
         </div>
 
         <!-- Grid lịch -->
@@ -56,68 +51,83 @@
         />
       </div>
 
-      <!-- Modal chi tiết ngày (read-only cho user, có thể chỉnh sửa cho admin/employee) -->
+      <!-- Modal chi tiết ngày -->
       <div v-if="showModal" class="modal-overlay" @click="closeModal">
-        <div class="modal-content" @click.stop>
-          <h3>{{ canEdit ? 'Quản lý lịch' : 'Chi tiết ngày' }}</h3>
+        <div class="modal-content modal-large" @click.stop>
+          <h3>{{ canEdit ? 'Quản lý lịch' : 'Chi tiết' }} - {{ formatDate(selectedDay?.date) }}</h3>
           
-          <p class="modal-date">Ngày: {{ formatDate(selectedDay?.date) }}</p>
+          <!-- Hiển thị chi tiết time slots -->
+          <div v-if="selectedDay?.timeSlots && selectedDay.timeSlots.length > 0" class="time-slots-list">
+            <h4>Các khoảng thời gian:</h4>
+            <div v-for="(slot, index) in selectedDay.timeSlots" :key="index" class="time-slot-item">
+              <div class="slot-header">
+                <span class="slot-time">⏰ {{ slot.startTime }} - {{ slot.endTime }}</span>
+                <span :class="'slot-badge ' + slot.type">
+                  {{ slot.type === 'busy' ? '📦 Đơn hàng' : '🚫 Kẹt lịch' }}
+                </span>
+              </div>
+              <div v-if="slot.type === 'busy' && slot.orderNumber" class="slot-details">
+                <p><strong>Đơn hàng:</strong> #{{ slot.orderNumber }}</p>
+                <p><strong>Khách hàng:</strong> {{ slot.userName }}</p>
+              </div>
+              <div v-if="slot.type === 'blocked' && slot.note" class="slot-details">
+                <p><strong>Ghi chú:</strong> {{ slot.note }}</p>
+              </div>
+              <!-- Nút xóa time slot (chỉ admin/employee và chỉ blocked) -->
+              <button 
+                v-if="canEdit && slot.type === 'blocked'"
+                class="btn-remove-slot"
+                @click="confirmRemoveSlot(slot)"
+              >
+                Xóa khoảng thời gian này
+              </button>
+            </div>
+          </div>
           
-          <!-- Hiển thị trạng thái hiện tại -->
-          <div class="current-status">
-            <strong>Trạng thái hiện tại:</strong>
-            <span :class="'status-badge ' + selectedDay?.status">
-              {{ getStatusText(selectedDay?.status) }}
-            </span>
+          <div v-else class="no-slots">
+            <p>📅 Ngày này hiện đang trống</p>
           </div>
 
-          <!-- Nếu đang bận, hiển thị số đơn -->
-          <div v-if="selectedDay?.status === 'busy'" class="busy-info">
-            📦 Ngày này đang có {{ selectedDay.orderIds.length }} đơn hàng
-          </div>
-
-          <!-- Nếu đang blocked, hiển thị ghi chú -->
-          <div v-if="selectedDay?.status === 'blocked' && selectedDay?.note" class="blocked-note">
-            <strong>Ghi chú:</strong>
-            <p>{{ selectedDay.note }}</p>
-          </div>
-
-          <!-- Form kẹt lịch (chỉ admin/employee và ngày rảnh) -->
-          <div v-if="canEdit && selectedDay?.status === 'free'" class="block-form">
-            <label>Ghi chú (tùy chọn):</label>
-            <textarea 
-              v-model="blockNote"
-              placeholder="Nhập lý do kẹt lịch..."
-              rows="3"
-            ></textarea>
-          </div>
-
-          <!-- Warning nếu cố kẹt lịch ngày bận -->
-          <div v-if="canEdit && selectedDay?.status === 'busy'" class="busy-warning">
-            ⚠️ Ngày này đang có {{ selectedDay.orderIds.length }} đơn hàng, không thể kẹt lịch
+          <!-- Form kẹt lịch (chỉ admin/employee) -->
+          <div v-if="canEdit" class="block-form">
+            <h4>Kẹt lịch khoảng thời gian mới</h4>
+            <div class="time-inputs">
+              <div class="input-group">
+                <label>Từ giờ:</label>
+                <input 
+                  type="time" 
+                  v-model="blockStartTime"
+                  class="time-input"
+                >
+              </div>
+              <div class="input-group">
+                <label>Đến giờ:</label>
+                <input 
+                  type="time" 
+                  v-model="blockEndTime"
+                  class="time-input"
+                >
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Ghi chú (tùy chọn):</label>
+              <textarea 
+                v-model="blockNote"
+                placeholder="Nhập lý do kẹt lịch..."
+                rows="2"
+              ></textarea>
+            </div>
+            <button 
+              class="btn-add-block"
+              @click="confirmBlock"
+              :disabled="!blockStartTime || !blockEndTime"
+            >
+              ➕ Thêm khoảng thời gian kẹt lịch
+            </button>
           </div>
 
           <div class="modal-actions">
-            <button class="btn-modal-cancel" @click="closeModal">
-              Đóng
-            </button>
-            
-            <!-- Nút hành động chỉ cho admin/employee -->
-            <button 
-              v-if="canEdit && selectedDay?.status === 'free'"
-              class="btn-modal-confirm block"
-              @click="confirmBlock"
-            >
-              Kẹt lịch
-            </button>
-            
-            <button 
-              v-if="canEdit && selectedDay?.status === 'blocked'"
-              class="btn-modal-confirm unblock"
-              @click="confirmUnblock"
-            >
-              Mở lại
-            </button>
+            <button class="btn-modal-cancel" @click="closeModal">Đóng</button>
           </div>
         </div>
       </div>
@@ -133,9 +143,8 @@ import { useAuth } from '../composables/useAuth'
 import { formatDate } from '../utils/formatters'
 
 const { isLoggedIn, currentUser } = useAuth()
-const { calendarData, loading, error, fetchCalendar, blockDate, unblockDate } = useCalendar()
+const { calendarData, loading, error, fetchCalendar, blockTimeSlot, unblockTimeSlot } = useCalendar()
 
-// Kiểm tra quyền chỉnh sửa (chỉ admin và employee)
 const canEdit = computed(() => {
   return currentUser.value && (
     currentUser.value.role === 'admin' || 
@@ -143,28 +152,25 @@ const canEdit = computed(() => {
   )
 })
 
-// State cho tháng/năm hiện tại
 const now = new Date()
 const selectedMonth = ref(now.getMonth() + 1)
 const selectedYear = ref(now.getFullYear())
 
-// Danh sách năm (từ năm hiện tại đến 2 năm sau)
 const yearOptions = computed(() => {
   const current = new Date().getFullYear()
   return [current, current + 1, current + 2]
 })
 
-// State cho modal
 const showModal = ref(false)
 const selectedDay = ref(null)
+const blockStartTime = ref('07:00')
+const blockEndTime = ref('17:00')
 const blockNote = ref('')
 
-// Load lịch theo tháng/năm
 const loadCalendar = async () => {
   await fetchCalendar(selectedYear.value, selectedMonth.value)
 }
 
-// Chuyển tháng trước
 const previousMonth = () => {
   if (selectedMonth.value === 1) {
     selectedMonth.value = 12
@@ -175,7 +181,6 @@ const previousMonth = () => {
   loadCalendar()
 }
 
-// Chuyển tháng sau
 const nextMonth = () => {
   if (selectedMonth.value === 12) {
     selectedMonth.value = 1
@@ -186,55 +191,68 @@ const nextMonth = () => {
   loadCalendar()
 }
 
-// Xử lý click vào ngày
 const handleDateClick = (day) => {
   selectedDay.value = day
-  blockNote.value = day.note || ''
+  blockStartTime.value = '07:00'
+  blockEndTime.value = '17:00'
+  blockNote.value = ''
   showModal.value = true
 }
 
-// Đóng modal
 const closeModal = () => {
   showModal.value = false
   selectedDay.value = null
-  blockNote.value = ''
 }
 
-// Xác nhận kẹt lịch (chỉ admin/employee)
 const confirmBlock = async () => {
-  const result = await blockDate(selectedDay.value.date, blockNote.value)
+  if (!blockStartTime.value || !blockEndTime.value) {
+    alert('⚠️ Vui lòng chọn thời gian bắt đầu và kết thúc')
+    return
+  }
+
+  if (blockStartTime.value >= blockEndTime.value) {
+    alert('⚠️ Thời gian kết thúc phải sau thời gian bắt đầu')
+    return
+  }
+
+  const result = await blockTimeSlot(
+    selectedDay.value.date, 
+    blockStartTime.value, 
+    blockEndTime.value, 
+    blockNote.value
+  )
   
   if (result.success) {
     alert('✅ ' + result.message)
+    loadCalendar()
+    blockStartTime.value = '07:00'
+    blockEndTime.value = '17:00'
+    blockNote.value = ''
+  } else {
+    alert('❌ ' + result.message)
+  }
+}
+
+const confirmRemoveSlot = async (slot) => {
+  if (!confirm(`Xóa khoảng thời gian từ ${slot.startTime} đến ${slot.endTime}?`)) {
+    return
+  }
+
+  const result = await unblockTimeSlot(
+    selectedDay.value.date,
+    slot.startTime,
+    slot.endTime
+  )
+  
+  if (result.success) {
+    alert('✅ ' + result.message)
+    loadCalendar()
     closeModal()
   } else {
     alert('❌ ' + result.message)
   }
 }
 
-// Xác nhận mở lại lịch (chỉ admin/employee)
-const confirmUnblock = async () => {
-  const result = await unblockDate(selectedDay.value.date)
-  
-  if (result.success) {
-    alert('✅ ' + result.message)
-    closeModal()
-  } else {
-    alert('❌ ' + result.message)
-  }
-}
-
-// Lấy text trạng thái
-const getStatusText = (status) => {
-  const statusMap = {
-    'free': 'Rảnh',
-    'busy': 'Bận',
-    'blocked': 'Kẹt lịch'
-  }
-  return statusMap[status] || status
-}
-
-// Load lịch khi component mount (nếu đã đăng nhập)
 onMounted(() => {
   if (isLoggedIn.value) {
     loadCalendar()
@@ -261,7 +279,7 @@ onMounted(() => {
 
 .btn-nav {
   padding: 10px 20px;
-  background: #e63946;
+  background: #1D3557;
   color: white;
   border: none;
   border-radius: 6px;
@@ -271,7 +289,7 @@ onMounted(() => {
 }
 
 .btn-nav:hover {
-  background: #d00000;
+  background: #4b5563;
 }
 
 .month-year-selector {
@@ -286,21 +304,6 @@ onMounted(() => {
   font-size: 1rem;
   cursor: pointer;
   background: white;
-}
-
-.month-year-selector select:focus {
-  outline: none;
-  border-color: #e63946;
-}
-
-.info-banner {
-  padding: 15px;
-  background: #e0f2fe;
-  border-left: 4px solid #3b82f6;
-  border-radius: 6px;
-  color: #1e40af;
-  margin-bottom: 20px;
-  font-size: 0.95rem;
 }
 
 .btn-back {
@@ -328,163 +331,196 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   z-index: 9999;
+  overflow-y: auto;
+  padding: 20px;
 }
 
 .modal-content {
   background: white;
   padding: 30px;
   border-radius: 12px;
-  max-width: 500px;
   width: 90%;
+  max-width: 500px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-large {
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal-content h3 {
   color: #e63946;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   font-size: 1.5rem;
 }
 
-.modal-date {
-  color: #4b5563;
+.modal-content h4 {
+  color: #1D3557;
+  margin-bottom: 15px;
   font-size: 1.1rem;
-  margin-bottom: 15px;
 }
 
-.current-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-  padding: 10px;
+.time-slots-list {
+  margin-bottom: 25px;
+}
+
+.time-slot-item {
   background: #f8f9fa;
+  border-left: 4px solid #3b82f6;
+  padding: 15px;
   border-radius: 6px;
+  margin-bottom: 12px;
 }
 
-.status-badge {
+.slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.slot-time {
+  font-weight: 600;
+  color: #1D3557;
+  font-size: 1.05rem;
+}
+
+.slot-badge {
   padding: 4px 12px;
   border-radius: 12px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
-.status-badge.free {
-  background: #d1fae5;
-  color: #047857;
-}
-
-.status-badge.busy {
+.slot-badge.busy {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.status-badge.blocked {
+.slot-badge.blocked {
   background: #fef3c7;
   color: #92400e;
 }
 
-.busy-info {
-  padding: 15px;
-  background: #e0f2fe;
-  border-left: 4px solid #3b82f6;
-  border-radius: 6px;
-  color: #1e40af;
-  margin-bottom: 15px;
+.slot-details {
+  font-size: 0.9rem;
+  color: #4b5563;
 }
 
-.busy-warning {
-  padding: 15px;
-  background: #fef3c7;
-  border-left: 4px solid #f59e0b;
+.slot-details p {
+  margin: 5px 0;
+}
+
+.btn-remove-slot {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
   border-radius: 6px;
-  color: #92400e;
-  margin-bottom: 15px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-remove-slot:hover {
+  background: #dc2626;
+}
+
+.no-slots {
+  text-align: center;
+  padding: 30px;
+  color: #6b7280;
+  font-size: 1.05rem;
 }
 
 .block-form {
+  padding: 20px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border-left: 4px solid #10b981;
   margin-bottom: 20px;
 }
 
-.block-form label {
-  display: block;
-  margin-bottom: 8px;
-  color: #1D3557;
-  font-weight: 500;
-}
-
-.block-form textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-family: inherit;
-  resize: vertical;
-}
-
-.block-form textarea:focus {
-  outline: none;
-  border-color: #e63946;
-}
-
-.blocked-note {
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
+.time-inputs {
+  display: flex;
+  gap: 15px;
   margin-bottom: 15px;
 }
 
-.blocked-note strong {
-  color: #1D3557;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.blocked-note p {
-  color: #4b5563;
-  margin: 0;
-  font-style: italic;
-}
-
-.modal-actions {
+.input-group {
+  flex: 1;
   display: flex;
-  gap: 10px;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.btn-modal-cancel,
-.btn-modal-confirm {
-  padding: 10px 24px;
+.input-group label {
+  font-weight: 500;
+  color: #1D3557;
+  font-size: 0.9rem;
+}
+
+.time-input,
+.input-group textarea {
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.input-group textarea {
+  resize: vertical;
+}
+
+.time-input:focus,
+.input-group textarea:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+.btn-add-block {
+  width: 100%;
+  padding: 10px;
+  background: #10b981;
+  color: white;
   border: none;
-  border-radius: 20px;
+  border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.3s;
 }
 
+.btn-add-block:hover {
+  background: #059669;
+}
+
+.btn-add-block:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
 .btn-modal-cancel {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
   background: #6b7280;
   color: white;
+  transition: background 0.3s;
 }
 
 .btn-modal-cancel:hover {
   background: #4b5563;
-}
-
-.btn-modal-confirm.block {
-  background: #f59e0b;
-  color: white;
-}
-
-.btn-modal-confirm.block:hover {
-  background: #d97706;
-}
-
-.btn-modal-confirm.unblock {
-  background: #10b981;
-  color: white;
-}
-
-.btn-modal-confirm.unblock:hover {
-  background: #059669;
 }
 </style>

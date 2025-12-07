@@ -1,5 +1,5 @@
 // frontend/composables/useCalendar.js
-// Composable quản lý lịch
+// Composable quản lý lịch theo thời gian cụ thể
 import { ref } from 'vue'
 import api from '../utils/api'
 
@@ -26,19 +26,19 @@ export function useCalendar() {
     }
   }
 
-  // Kẹt lịch một ngày
-  const blockDate = async (date, note) => {
+  // Kẹt lịch một khoảng thời gian
+  const blockTimeSlot = async (date, startTime, endTime, note) => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await api.put('/calendar/block', { date, note })
+      const { data } = await api.put('/calendar/block', { 
+        date, 
+        startTime, 
+        endTime, 
+        note 
+      })
       
       if (data.success) {
-        // Cập nhật local data
-        const index = calendarData.value.findIndex(d => d.date === date)
-        if (index !== -1) {
-          calendarData.value[index] = data.data
-        }
         return { success: true, message: data.message }
       }
       return { success: false, message: 'Không thể kẹt lịch' }
@@ -51,19 +51,18 @@ export function useCalendar() {
     }
   }
 
-  // Mở lại ngày bị kẹt
-  const unblockDate = async (date) => {
+  // Xóa một time slot kẹt lịch
+  const unblockTimeSlot = async (date, startTime, endTime) => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await api.put('/calendar/unblock', { date })
+      const { data } = await api.put('/calendar/unblock', { 
+        date, 
+        startTime, 
+        endTime 
+      })
       
       if (data.success) {
-        // Cập nhật local data
-        const index = calendarData.value.findIndex(d => d.date === date)
-        if (index !== -1) {
-          calendarData.value[index] = data.data
-        }
         return { success: true, message: data.message }
       }
       return { success: false, message: 'Không thể mở lại lịch' }
@@ -81,7 +80,7 @@ export function useCalendar() {
     loading,
     error,
     fetchCalendar,
-    blockDate,
-    unblockDate
+    blockTimeSlot,
+    unblockTimeSlot
   }
 }

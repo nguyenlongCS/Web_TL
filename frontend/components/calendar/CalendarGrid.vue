@@ -1,9 +1,9 @@
 <!-- frontend/components/calendar/CalendarGrid.vue -->
-<!-- Component hiển thị lịch dạng lưới với các ô ngày tô màu theo trạng thái -->
+<!-- Component hiển thị lưới lịch theo tháng - xử lý an toàn timeSlots -->
 
 <template>
   <div class="calendar-grid">
-    <!-- Header với tên các thứ -->
+    <!-- Header ngày trong tuần -->
     <div class="calendar-header">
       <div class="day-name">CN</div>
       <div class="day-name">T2</div>
@@ -16,41 +16,32 @@
 
     <!-- Grid các ngày -->
     <div class="calendar-body">
-      <!-- Ô trống cho ngày đầu tháng -->
+      <!-- Ô trống cho những ngày trước ngày đầu tháng -->
       <div 
-        v-for="blank in firstDayOfWeek" 
-        :key="'blank-' + blank"
-        class="calendar-cell blank"
+        v-for="blank in leadingBlanks" 
+        :key="'blank-' + blank" 
+        class="calendar-day blank"
       ></div>
 
-      <!-- Các ô ngày trong tháng -->
-      <div 
+      <!-- Các ngày trong tháng -->
+      <div
         v-for="day in daysInMonth"
         :key="day.date"
-        :class="['calendar-cell', getStatusClass(day.status)]"
+        class="calendar-day"
+        :class="getDayClass(day)"
         @click="$emit('date-click', day)"
       >
         <div class="day-number">{{ getDayNumber(day.date) }}</div>
-        <div class="day-status">
-          <span v-if="day.status === 'busy'">{{ day.orderIds.length }} đơn</span>
-          <span v-else-if="day.status === 'blocked'">🚫</span>
+        
+        <!-- Hiển thị số lượng time slots nếu có -->
+        <div v-if="hasTimeSlots(day)" class="day-status">
+          <span class="slot-count">{{ getTimeSlotCount(day) }} khoảng</span>
         </div>
-      </div>
-    </div>
-
-    <!-- Chú thích -->
-    <div class="calendar-legend">
-      <div class="legend-item">
-        <div class="legend-color free"></div>
-        <span>Rảnh</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color busy"></div>
-        <span>Bận</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color blocked"></div>
-        <span>Kẹt lịch</span>
+        
+        <!-- Badge trạng thái -->
+        <div v-if="day.status === 'busy'" class="status-badge busy">
+          Bận
+        </div>
       </div>
     </div>
   </div>
@@ -62,7 +53,8 @@ import { computed } from 'vue'
 const props = defineProps({
   daysInMonth: {
     type: Array,
-    required: true
+    required: true,
+    default: () => []
   },
   year: {
     type: Number,
@@ -76,173 +68,189 @@ const props = defineProps({
 
 defineEmits(['date-click'])
 
-// Tính ngày đầu tiên của tháng là thứ mấy (0 = CN, 1 = T2,...)
-const firstDayOfWeek = computed(() => {
-  if (props.daysInMonth.length === 0) return 0
-  const firstDate = new Date(props.daysInMonth[0].date)
-  return firstDate.getDay()
+// Tính số ô trống đầu tháng
+const leadingBlanks = computed(() => {
+  if (!props.daysInMonth || props.daysInMonth.length === 0) return 0
+  
+  const firstDay = new Date(props.year, props.month - 1, 1)
+  return firstDay.getDay() // 0 = CN, 1 = T2, ...
 })
 
 // Lấy số ngày từ date string (YYYY-MM-DD)
 const getDayNumber = (dateStr) => {
-  const date = new Date(dateStr)
-  return date.getDate()
+  if (!dateStr) return ''
+  const parts = dateStr.split('-')
+  return parseInt(parts[2], 10)
 }
 
-// Lấy class CSS theo trạng thái
-const getStatusClass = (status) => {
-  const classes = {
-    'free': 'status-free',
-    'busy': 'status-busy',
-    'blocked': 'status-blocked'
+// Kiểm tra có time slots không (AN TOÀN)
+const hasTimeSlots = (day) => {
+  return day && 
+         day.timeSlots && 
+         Array.isArray(day.timeSlots) && 
+         day.timeSlots.length > 0
+}
+
+// Đếm số time slots (AN TOÀN)
+const getTimeSlotCount = (day) => {
+  if (!hasTimeSlots(day)) return 0
+  return day.timeSlots.length
+}
+
+// Xác định class cho ngày
+const getDayClass = (day) => {
+  const classes = []
+  
+  if (day.status === 'busy') {
+    classes.push('has-slots')
   }
-  return classes[status] || 'status-free'
+  
+  // Kiểm tra ngày hiện tại
+  const today = new Date()
+  const dayDate = new Date(day.date)
+  
+  if (
+    dayDate.getDate() === today.getDate() &&
+    dayDate.getMonth() === today.getMonth() &&
+    dayDate.getFullYear() === today.getFullYear()
+  ) {
+    classes.push('today')
+  }
+  
+  // Kiểm tra ngày trong quá khứ
+  if (dayDate < today && !classes.includes('today')) {
+    classes.push('past')
+  }
+  
+  return classes
 }
 </script>
 
 <style scoped>
 .calendar-grid {
   background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 .calendar-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 10px;
+  background: #1D3557;
+  color: white;
 }
 
 .day-name {
+  padding: 15px;
   text-align: center;
   font-weight: 600;
-  color: #1D3557;
-  padding: 10px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .calendar-body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
+  gap: 1px;
+  background: #e5e7eb;
 }
 
-.calendar-cell {
-  aspect-ratio: 1;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 8px;
+.calendar-day {
+  background: white;
+  min-height: 100px;
+  padding: 10px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s;
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
-.calendar-cell:hover:not(.blank) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+.calendar-day:hover:not(.blank) {
+  background: #f9fafb;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1;
 }
 
-.calendar-cell.blank {
-  background: transparent;
-  border: none;
+.calendar-day.blank {
+  background: #f3f4f6;
   cursor: default;
 }
 
+.calendar-day.today {
+  background: #fff7ed;
+  border: 2px solid #f59e0b;
+}
+
+.calendar-day.past {
+  opacity: 0.6;
+}
+
+.calendar-day.has-slots {
+  background: #fef3c7;
+}
+
+.calendar-day.has-slots:hover {
+  background: #fde68a;
+}
+
 .day-number {
+  font-size: 1.1rem;
   font-weight: 600;
-  font-size: 1rem;
   color: #1D3557;
+  margin-bottom: 5px;
 }
 
 .day-status {
-  font-size: 0.75rem;
-  text-align: center;
-  margin-top: 5px;
+  margin-top: auto;
+  padding-top: 8px;
 }
 
-/* Trạng thái rảnh - màu xanh */
-.status-free {
-  background: #d1fae5;
-  border-color: #10b981;
-}
-
-.status-free .day-number {
-  color: #047857;
-}
-
-/* Trạng thái bận - màu đỏ */
-.status-busy {
-  background: #fee2e2;
-  border-color: #ef4444;
-}
-
-.status-busy .day-number {
-  color: #991b1b;
-}
-
-.status-busy .day-status {
-  color: #dc2626;
+.slot-count {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: #92400e;
+  background: #fde68a;
+  padding: 3px 8px;
+  border-radius: 10px;
   font-weight: 500;
 }
 
-/* Trạng thái kẹt lịch - màu vàng */
-.status-blocked {
-  background: #fef3c7;
-  border-color: #f59e0b;
+.status-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
-.status-blocked .day-number {
-  color: #92400e;
-}
-
-.status-blocked .day-status {
-  font-size: 1.2rem;
-}
-
-/* Chú thích */
-.calendar-legend {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.legend-color {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  border: 1px solid #d1d5db;
-}
-
-.legend-color.free {
-  background: #d1fae5;
-  border-color: #10b981;
-}
-
-.legend-color.busy {
+.status-badge.busy {
   background: #fee2e2;
-  border-color: #ef4444;
+  color: #991b1b;
 }
 
-.legend-color.blocked {
-  background: #fef3c7;
-  border-color: #f59e0b;
-}
-
-.legend-item span {
-  font-size: 0.9rem;
-  color: #4b5563;
+/* Responsive */
+@media (max-width: 768px) {
+  .calendar-day {
+    min-height: 80px;
+    padding: 8px;
+  }
+  
+  .day-number {
+    font-size: 1rem;
+  }
+  
+  .day-name {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  
+  .slot-count {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
 }
 </style>

@@ -11,6 +11,9 @@
       </div>
 
       <div v-else id="cart-container">
+        <div v-if="!canEdit" class="info-banner">
+          ℹ️ Chuyển sang mục "Lịch" xem thời gian có thể đặt được
+        </div>
         <CartItem 
           v-for="(item, index) in cart" 
           :key="index"
