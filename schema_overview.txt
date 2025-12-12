@@ -1,19 +1,13 @@
-[orders]
+[services]
 - __v: int
 - _id: objectId
-- approvedAt: date
-- approvedBy: objectId
-- approvedByName: string
+- active: bool
 - createdAt: date
-- items: array
-- orderNumber: string
-- rejectionReason: null
-- rentalStartDate: date
-- status: string
-- totalAmount: int
+- description: string
+- imgSrc: string
+- order: int
+- title: string
 - updatedAt: date
-- userId: objectId
-- userName: string
 
 [users]
 - __v: int
@@ -26,15 +20,57 @@
 - role: string
 - updatedAt: date
 
-[services]
+[products]
 - __v: int
 - _id: objectId
-- active: bool
+- category: string
 - createdAt: date
 - description: string
 - imgSrc: string
-- order: int
-- title: string
+- media: array
+- name: string
+- price: int
+- priceText: string
+- rating: double, int
+- stock: int
+- updatedAt: date
+
+[messages]
+- __v: int
+- _id: objectId
+- content: string
+- createdAt: date
+- isRead: bool
+- messageType: string
+- roomId: string
+- senderId: null
+- senderName: string
+- senderRole: string
+- updatedAt: date
+
+[orders]
+- __v: int
+- _id: objectId
+- approvedAt: date, null
+- approvedBy: null, objectId
+- approvedByName: string, null
+- createdAt: date
+- items: array
+- orderNumber: string
+- rejectionReason: null, string
+- rentalStartDate: date
+- status: string
+- totalAmount: int
+- updatedAt: date
+- userId: objectId
+- userName: string
+
+[calendars]
+- __v: int
+- _id: objectId
+- createdAt: date
+- date: string
+- timeSlots: array
 - updatedAt: date
 
 [reviews]
@@ -50,31 +86,6 @@
 - text: string
 - updatedAt: date
 - userId: null
-
-[products]
-- __v: int
-- _id: objectId
-- category: string
-- createdAt: date
-- description: string
-- imgSrc: string
-- media: array
-- name: string
-- price: int
-- priceText: string
-- rating: int, double
-- stock: int
-- updatedAt: date
-
-[calendars]
-- __v: int
-- _id: objectId
-- createdAt: date
-- date: string
-- note: string
-- orderIds: array
-- status: string
-- updatedAt: date
 
 [projects]
 - __v: int
