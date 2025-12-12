@@ -1,5 +1,5 @@
 <!-- frontend/views/ChatManagementView.vue -->
-<!-- Trang quản lý tin nhắn cho admin -->
+<!-- Trang quản lý tin nhắn cho admin - fix lấy tên phòng từ tin nhắn -->
 
 <template>
   <section class="page-section chat-management-page">
@@ -58,21 +58,23 @@ const {
   leaveRoom,
   loadMessages,
   sendMessage,
-  loadRooms
+  loadRooms,
+  markAsRead
 } = useChat()
 
 const selectedRoomId = ref(null)
 const roomsLoading = ref(false)
 const messagesLoading = ref(false)
 
-// Tên phòng hiện tại
+// Fix: Lấy tên phòng từ senderName trong room data
 const currentRoomName = computed(() => {
   if (!selectedRoomId.value) return ''
   const room = rooms.value.find(r => r._id === selectedRoomId.value)
+  // Sử dụng senderName từ room data (đã được backend trả về)
   return room?.senderName || 'Khách'
 })
 
-// Chọn phòng chat
+// Chọn phòng chat và đánh dấu đã đọc
 const handleSelectRoom = async (roomId) => {
   // Leave phòng cũ
   if (selectedRoomId.value) {
@@ -87,6 +89,12 @@ const handleSelectRoom = async (roomId) => {
   messagesLoading.value = true
   await loadMessages(roomId)
   messagesLoading.value = false
+
+  // Đánh dấu đã đọc
+  await markAsRead(roomId)
+  
+  // Reload danh sách phòng để cập nhật unread count
+  await loadRooms()
 }
 
 // Gửi tin nhắn text

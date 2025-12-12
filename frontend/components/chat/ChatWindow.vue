@@ -1,5 +1,5 @@
 <!-- frontend/components/chat/ChatWindow.vue -->
-<!-- Component cửa sổ chat -->
+<!-- Component cửa sổ chat - fix logic xác định tin nhắn của user/guest -->
 
 <template>
   <div v-if="isOpen" class="chat-window">
@@ -76,12 +76,23 @@ const messagesContainer = ref(null)
 const fileInput = ref(null)
 const previewImage = ref(null)
 
-// Kiểm tra tin nhắn có phải của mình không
+// Fix: Xác định tin nhắn có phải của mình không
+// User đã login: so sánh senderId với currentUserId
+// Guest: so sánh senderRole === 'guest'
 const isOwnMessage = (message) => {
+  // Nếu là user đã login và có senderId
+  if (props.currentUserId && message.senderId?._id) {
+    return message.senderId._id === props.currentUserId
+  }
+  
+  // Nếu là guest
   if (props.currentUserRole === 'guest') {
     return message.senderRole === 'guest'
   }
-  return message.senderId?._id === props.currentUserId
+  
+  // Nếu là user đã login nhưng tin nhắn không có senderId
+  // (trường hợp cũ hoặc lỗi data)
+  return message.senderRole === 'user'
 }
 
 // Gửi tin nhắn text
@@ -105,7 +116,6 @@ const handleFileSelect = async (event) => {
     return
   }
 
-  // Tạo URL tạm thời (trong thực tế cần upload lên server)
   const reader = new FileReader()
   reader.onload = (e) => {
     const content = e.target.result

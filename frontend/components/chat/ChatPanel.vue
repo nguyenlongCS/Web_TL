@@ -1,5 +1,5 @@
 <!-- frontend/components/chat/ChatPanel.vue -->
-<!-- Component khung chat cho admin - hiển thị tin nhắn của 1 phòng -->
+<!-- Component khung chat cho admin - fix logic xác định tin nhắn của mình -->
 
 <template>
   <div class="chat-panel">
@@ -85,9 +85,17 @@ const messagesContainer = ref(null)
 const fileInput = ref(null)
 const previewImage = ref(null)
 
-// Kiểm tra tin nhắn có phải của admin không
+// Fix: Kiểm tra tin nhắn có phải của admin đang xem không
+// Admin: tin nhắn của admin (senderRole === 'admin' hoặc 'employee')
+// Tin nhắn của admin HOẶC tin nhắn có senderId trùng với currentUserId
 const isOwnMessage = (message) => {
-  return message.senderId?._id === props.currentUserId
+  // Nếu có senderId và trùng với user hiện tại
+  if (message.senderId?._id && props.currentUserId) {
+    return message.senderId._id === props.currentUserId
+  }
+  
+  // Fallback: kiểm tra role
+  return message.senderRole === 'admin' || message.senderRole === 'employee'
 }
 
 // Gửi tin nhắn text
@@ -163,6 +171,7 @@ watch(() => props.messages, () => {
 
 .chat-content {
   height: 100%;
+  width: 90%;
   display: flex;
   flex-direction: column;
 }

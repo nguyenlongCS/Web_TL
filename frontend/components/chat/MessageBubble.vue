@@ -1,5 +1,5 @@
 <!-- frontend/components/chat/MessageBubble.vue -->
-<!-- Component hiển thị một tin nhắn -->
+<!-- Component hiển thị một tin nhắn - fix logic xác định tin nhắn của mình -->
 
 <template>
   <div :class="['message-bubble', isOwn ? 'own' : 'other']">

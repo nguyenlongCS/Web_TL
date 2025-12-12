@@ -373,6 +373,9 @@ const importData = async () => {
     console.log('   User:')
     console.log('   - Email: user@test.com')
     console.log('   - Password: 123456')
+    console.log('   Employee:')
+    console.log('   - Email: long@gmail.com')
+    console.log('   - Password: 123456')
     
     process.exit()
   } catch (error) {

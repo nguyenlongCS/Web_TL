@@ -1,5 +1,5 @@
 <!-- frontend/components/layout/FloatingButtons.vue -->
-<!-- Các nút floating - admin vào /tinnhan, user mở chat window -->
+<!-- Các nút floating - fix logic đếm tin nhắn chưa đọc -->
 
 <template>
   <div>
@@ -24,6 +24,8 @@
     <!-- Nút Chat - admin chuyển trang, user mở popup -->
     <router-link v-if="isAdmin" to="/tinnhan" class="chat-button">
       <img src="/frontend/assets/icons/chat.png" alt="Chat" class="chat-icon">
+      <!-- Badge đếm tin nhắn chưa đọc cho admin -->
+      <span v-if="unreadCount > 0" class="chat-count">{{ unreadCount }}</span>
     </router-link>
     
     <button v-else class="chat-button" @click="toggleChat">
@@ -46,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useCart } from '../../composables/useCart'
 import { useOrders } from '../../composables/useOrders'
 import { useAuth } from '../../composables/useAuth'
@@ -59,6 +61,7 @@ const { currentUser } = useAuth()
 
 const {
   messages,
+  rooms,
   roomId,
   senderInfo,
   loading,
@@ -66,7 +69,8 @@ const {
   connect,
   joinRoom,
   loadMessages,
-  sendMessage
+  sendMessage,
+  loadRooms
 } = useChat()
 
 const chatOpen = ref(false)
@@ -87,6 +91,15 @@ const canApprove = computed(() => {
 // Đếm số đơn hàng chờ duyệt
 const pendingOrderCount = computed(() => {
   return allOrders.value.filter(o => o.status === 'pending').length
+})
+
+// Fix: Đếm tổng số tin nhắn chưa đọc (chỉ admin)
+const unreadCount = computed(() => {
+  if (!isAdmin.value) return 0
+  
+  return rooms.value.reduce((total, room) => {
+    return total + (room.unreadCount || 0)
+  }, 0)
 })
 
 // Bật/tắt chat (chỉ cho user/guest)
@@ -122,6 +135,42 @@ const handleSendFile = async (content, type) => {
     alert('❌ Gửi file thất bại!')
   }
 }
+
+// Load danh sách phòng cho admin khi mount
+onMounted(async () => {
+  if (isAdmin.value) {
+    // Kết nối socket
+    if (!connected.value) {
+      connect()
+    }
+    
+    // Load danh sách phòng để đếm unread
+    await loadRooms()
+  }
+})
+
+// Reload rooms mỗi 30 giây để cập nhật unread count cho admin
+let reloadInterval = null
+watch(isAdmin, (newValue) => {
+  if (newValue) {
+    // Kết nối và load rooms
+    if (!connected.value) {
+      connect()
+    }
+    loadRooms()
+    
+    // Set interval reload
+    reloadInterval = setInterval(() => {
+      loadRooms()
+    }, 30000)
+  } else {
+    // Clear interval nếu không phải admin
+    if (reloadInterval) {
+      clearInterval(reloadInterval)
+      reloadInterval = null
+    }
+  }
+}, { immediate: true })
 
 // Kết nối socket khi component mount
 watch(() => chatOpen.value, (isOpen) => {
@@ -281,5 +330,20 @@ watch(() => chatOpen.value, (isOpen) => {
   width: 28px;
   height: 28px;
   filter: brightness(0) invert(1);
+}
+
+/* Badge đếm tin nhắn chưa đọc */
+.chat-count {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
 }
 </style>
