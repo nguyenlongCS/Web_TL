@@ -1,24 +1,24 @@
 <!-- frontend/components/layout/FloatingButtons.vue -->
-<!-- Các nút floating - fix logic đếm tin nhắn chưa đọc -->
+<!-- Các nút floating - fix load allOrders khi mount -->
 
 <template>
   <div>
     <!-- Nút Duyệt đơn hàng - chỉ hiển thị cho admin và employee -->
     <router-link v-if="canApprove" to="/duyetdonhang" class="approve-orders-button">
       <img src="/frontend/assets/icons/approve.png" alt="Duyệt đơn hàng">
-      <span id="approve-count">{{ pendingOrderCount }}</span>
+      <span v-if="pendingOrderCount > 0" id="approve-count">{{ pendingOrderCount }}</span>
     </router-link>
 
     <!-- Nút Đơn hàng -->
     <router-link to="/donhang" class="orders-button">
       <img src="/frontend/assets/icons/orders.png" alt="Đơn hàng">
-      <span id="orders-count">{{ orderCount }}</span>
+      <span v-if="orderCount > 0" id="orders-count">{{ orderCount }}</span>
     </router-link>
     
     <!-- Nút Giỏ hàng -->
     <router-link to="/giohang" class="cart-button">
       <img src="/frontend/assets/icons/cart.png" alt="Giỏ hàng">
-      <span id="cart-count">{{ cartCount }}</span>
+      <span v-if="cartCount > 0" id="cart-count">{{ cartCount }}</span>
     </router-link>
 
     <!-- Nút Chat - admin chuyển trang, user mở popup -->
@@ -56,8 +56,8 @@ import { useChat } from '../../composables/useChat'
 import ChatWindow from '../chat/ChatWindow.vue'
 
 const { cartCount } = useCart()
-const { orderCount, allOrders } = useOrders()
-const { currentUser } = useAuth()
+const { orderCount, allOrders, fetchMyOrders, fetchAllOrders } = useOrders()
+const { currentUser, isLoggedIn } = useAuth()
 
 const {
   messages,
@@ -93,7 +93,7 @@ const pendingOrderCount = computed(() => {
   return allOrders.value.filter(o => o.status === 'pending').length
 })
 
-// Fix: Đếm tổng số tin nhắn chưa đọc (chỉ admin)
+// Đếm tổng số tin nhắn chưa đọc (chỉ admin)
 const unreadCount = computed(() => {
   if (!isAdmin.value) return 0
   
@@ -136,8 +136,17 @@ const handleSendFile = async (content, type) => {
   }
 }
 
-// Load danh sách phòng cho admin khi mount
+// Fix: Load orders khi mount nếu user có quyền duyệt đơn
 onMounted(async () => {
+  // Load orders cho admin/employee
+  if (isLoggedIn.value && canApprove.value) {
+    await fetchAllOrders()
+  } else if (isLoggedIn.value) {
+    // Load orders của user thường
+    await fetchMyOrders()
+  }
+
+  // Load danh sách phòng cho admin
   if (isAdmin.value) {
     // Kết nối socket
     if (!connected.value) {
@@ -171,6 +180,17 @@ watch(isAdmin, (newValue) => {
     }
   }
 }, { immediate: true })
+
+// Watch isLoggedIn để load orders khi user đăng nhập
+watch(isLoggedIn, async (newValue) => {
+  if (newValue) {
+    if (canApprove.value) {
+      await fetchAllOrders()
+    } else {
+      await fetchMyOrders()
+    }
+  }
+})
 
 // Kết nối socket khi component mount
 watch(() => chatOpen.value, (isOpen) => {
