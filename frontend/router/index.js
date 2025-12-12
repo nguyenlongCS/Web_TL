@@ -1,5 +1,5 @@
 // frontend/router/index.js
-// Cấu hình routing - cho phép tất cả user xem lịch
+// Cấu hình routing - thêm route /tinnhan cho admin
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
@@ -15,6 +15,7 @@ import AddProductView from '../views/AddProductView.vue'
 import EditProductView from '../views/EditProductView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
 import CalendarView from '../views/CalendarView.vue'
+import ChatManagementView from '../views/ChatManagementView.vue'
 
 const routes = [
   {
@@ -82,11 +83,16 @@ const routes = [
     name: 'add-product',
     component: AddProductView
   },
-  // Tất cả user đã đăng nhập có thể xem lịch
   { 
     path: '/lich', 
     name: 'calendar', 
     component: CalendarView 
+  },
+  // Trang quản lý tin nhắn cho admin
+  {
+    path: '/tinnhan',
+    name: 'chat-management',
+    component: ChatManagementView
   }
 ]
 
